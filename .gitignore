@@ -1,1 +1,9 @@
+# binaries
 *.o
+NPB-CPP/bin*
+# outputs
+*.o*
+*.e*
+# auto generated files
+NPB-CPP/SP/npbparams.hpp
+NPB-CPP/sys/setparams
