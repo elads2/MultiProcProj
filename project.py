@@ -25,7 +25,7 @@ def run_cpu_improved(class_type: str):
     
     
 def main():
-    os.chdir(os.path.expanduser('~')+'/Multi-Core_Processor_Course/Project/runs')
+    os.chdir('runs')
     run_cpu('S')
     # parse_output = ParseOutput()
     # run_cpu('A')
