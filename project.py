@@ -46,7 +46,7 @@ def get_results_path(script_name: str, timeout: float = 100) -> Path:
 
 
 def main():
-    run_type = RunType.RUN_CPU
+    run_type = RunType.RUN_GPU
     class_type = 'S'
     times_to_run = 1
     num_threads = 1
