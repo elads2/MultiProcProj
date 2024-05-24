@@ -4,7 +4,6 @@ from pathlib import Path
 from enum import Enum
 import time
 
-
 RUN_TIME_STRING = 'Time in seconds'
 
 
@@ -17,11 +16,11 @@ class RunType(Enum):
 CLASS_TYPES = ['S', 'W', 'A', 'B', 'C', 'D', 'E', 'F']
 
 
-def run_benchmark(script_name: str, class_type: str):
+def run_benchmark(script_name: str, class_type: str, num_threads: int):
     """
     Run benchmark sh file
     """
-    subprocess.call(['./../q_cpu.sh', f'{script_name}.sh', f'class_type={class_type}'])
+    subprocess.call(['./../q_cpu.sh', f'{script_name}.sh', f'class_type={class_type},OMP_NUM_THREADS={num_threads}'])
 
 
 def get_run_duration(results_path: Path) -> float:
@@ -44,12 +43,13 @@ def main():
     run_type = RunType.RUN_CPU
     class_type = 'S'
     times_to_run = 1
+    num_threads = 1
 
     total_run_duration = 0
     os.chdir('runs')
     runs_pwd = os.getcwd()
     for run_index in range(times_to_run):
-        run_benchmark(run_type.value, class_type)
+        run_benchmark(run_type.value, class_type, num_threads)
         os.chdir(runs_pwd)
         total_run_duration += get_run_duration(get_results_path(run_type.value))
     average_run_duration = total_run_duration / times_to_run
