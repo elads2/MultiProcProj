@@ -336,7 +336,7 @@ void add(){
 	int thread_id = omp_get_thread_num();
 
 	if(timeron && thread_id==0){timer_start(T_ADD);}
-	#pragma omp for
+	#pragma omp for collapse(4) 
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -370,7 +370,7 @@ void compute_rhs(){
 	 * and the speed of sound. 
 	 * ---------------------------------------------------------------------
 	 */
-	#pragma omp for
+	#pragma omp for collapse(3)
 	for(k=0; k<=grid_points[2]-1; k++){
 		for(j=0; j<=grid_points[1]-1; j++){
 			for(i=0; i<=grid_points[0]-1; i++){
@@ -401,7 +401,7 @@ void compute_rhs(){
 	 * including the boundary                   
 	 * ---------------------------------------------------------------------
 	 */
-	#pragma omp for
+	#pragma omp for collapse(4)
 	for(k=0; k<=grid_points[2]-1; k++){
 		for(j=0; j<=grid_points[1]-1; j++){
 			for(i=0; i<=grid_points[0]-1; i++){
@@ -417,7 +417,7 @@ void compute_rhs(){
 	 * ---------------------------------------------------------------------
 	 */
 	if(timeron && thread_id==0){timer_start(T_RHSX);}
-	#pragma omp for
+	#pragma omp for collapse(3)
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
