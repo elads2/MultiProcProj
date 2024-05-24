@@ -1,37 +1,52 @@
 import os
-import subprocess 
+import pathlib
+import subprocess
+from pathlib import Path
+from enum import Enum
 
 
-class ParseOutput:
-    def __init__(self, output_text: str):
-        self.output_text = output_text
-        lines = self.output_text
+RUN_TIME_STRING = 'Time in seconds'
+
+
+class RunType(Enum):
+    RUN_CPU = 'run_cpu'
+    RUN_CPU_IMPROVED = 'run_cpu_improved'
+    RUN_GPU = 'run_gpu'
 
 
 CLASS_TYPES = ['S', 'W', 'A', 'B', 'C', 'D', 'E', 'F']
 
 
-def run_cpu(class_type: str):
+def run_benchmark(script_name: str, class_type: str):
     """
-    Run original version on CPU
+    Run benchmark sh file
     """
-    subprocess.call(['./../q_cpu.sh', 'run_cpu.sh', f'class_type={class_type}'])
-    
-def run_cpu_improved(class_type: str):
-    """
-    Run version improved fro CPU
-    """
-    subprocess.call(['./../q_cpu.sh', 'run_cpu_improved.sh', f'class_type={class_type}'])
-    
-    
+    subprocess.call(['./../q_cpu.sh', f'{script_name}.sh', f'class_type={class_type}'])
+
+
+def get_run_duration(results_path: Path) -> float:
+    with open(results_path, 'r') as results_file:
+        for line in results_file.readlines():
+            if RUN_TIME_STRING in line:
+                return float(line.split()[-1])
+
+
+def get_results_path(script_name: str) -> Path:
+    file_list = [f for f in os.listdir() if os.path.isfile(f)]
+    for file_name in file_list:
+        if '.o' in file_name and file_name.split('.')[0] == script_name:
+            return Path(file_name)
+
+
 def main():
-    os.chdir('runs')
-    run_cpu('S')
-    # parse_output = ParseOutput()
-    # run_cpu('A')
-    # run_cpu('B')
+    run_type = RunType.RUN_CPU
     
+    os.chdir('runs')
+    runs_pwd = os.getcwd()
+    run_benchmark(run_type.value, 'S')
+    os.chdir(runs_pwd)
+    print(f"{get_run_duration(get_results_path(run_type.value))}")
+
 
 if __name__ == '__main__':
     main()
-    

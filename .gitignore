@@ -1,5 +1,6 @@
 # binaries
 *.o
+*.pyc
 NPB-CPP/bin*
 # outputs
 *.o*
@@ -7,3 +8,7 @@ NPB-CPP/bin*
 # auto generated files
 NPB-CPP/SP/npbparams.hpp
 NPB-CPP/sys/setparams
+# pycharm
+.idea
+# vs
+.vs
