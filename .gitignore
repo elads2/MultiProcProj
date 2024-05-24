@@ -3,6 +3,7 @@
 # binaries
 *.o
 *.pyc
+*.ipynb_checkpoints
 NPB-CPP/bin*
 # outputs
 *.o*
