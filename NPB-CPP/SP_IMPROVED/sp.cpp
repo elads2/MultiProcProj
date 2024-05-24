@@ -340,7 +340,6 @@ void add(){
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
-				# pragma omp simd
 				for(m=0; m<5; m++){
 					u[k][j][i][m]=u[k][j][i][m]+rhs[k][j][i][m];
 				}
