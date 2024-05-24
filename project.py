@@ -14,6 +14,11 @@ class RunType(Enum):
 
 
 CLASS_TYPES = ['S', 'W', 'A', 'B', 'C', 'D', 'E', 'F']
+BINS_PATH = Path('NPB-CPP', 'bin')
+
+
+def remove_bin(class_type: str):
+    BINS_PATH.joinpath(f'SP.{class_type}')
 
 
 def run_benchmark(script_name: str, class_type: str, num_threads: int):
@@ -52,6 +57,7 @@ def main():
     num_threads = 1
 
     total_run_duration = 0
+    remove_bin(class_type)
     os.chdir('runs')
     runs_pwd = os.getcwd()
     for run_index in range(times_to_run):
