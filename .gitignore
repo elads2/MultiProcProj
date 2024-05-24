@@ -1,3 +1,5 @@
+# archives
+*.tar
 # binaries
 *.o
 *.pyc
@@ -12,3 +14,5 @@ NPB-CPP/sys/setparams
 .idea
 # vs
 .vs
+# vtune
+NPB-CPP/r???ps*
