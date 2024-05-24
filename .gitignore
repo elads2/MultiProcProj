@@ -9,6 +9,7 @@ NPB-CPP/bin*
 *.e*
 # auto generated files
 NPB-CPP/SP/npbparams.hpp
+NPB-CPP/SP_IMPROVED/npbparams.hpp
 NPB-CPP/sys/setparams
 # pycharm
 .idea

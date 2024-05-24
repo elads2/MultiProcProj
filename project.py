@@ -2,6 +2,7 @@ import os
 import subprocess
 from pathlib import Path
 from enum import Enum
+import time
 
 
 RUN_TIME_STRING = 'Time in seconds'
@@ -30,11 +31,13 @@ def get_run_duration(results_path: Path) -> float:
                 return float(line.split()[-1])
 
 
-def get_results_path(script_name: str) -> Path:
+def get_results_path(script_name: str, timeout: float = 100) -> Path:
     file_list = [f for f in os.listdir() if os.path.isfile(f)]
-    for file_name in file_list:
-        if '.o' in file_name and file_name.split('.')[0] == script_name:
-            return Path(file_name)
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        for file_name in file_list:
+            if '.o' in file_name and file_name.split('.')[0] == script_name:
+                return Path(file_name)
 
 
 def main():
