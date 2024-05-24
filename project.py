@@ -40,7 +40,7 @@ def get_results_path(script_name: str) -> Path:
 def main():
     run_type = RunType.RUN_CPU
     class_type = 'S'
-    times_to_run = 5
+    times_to_run = 1
 
     total_run_duration = 0
     os.chdir('runs')
