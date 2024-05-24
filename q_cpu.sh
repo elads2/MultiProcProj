@@ -21,7 +21,8 @@ else
     # Remove old output files
     rm *.sh.* > /dev/null 2>&1
     # Submit job using qsub
-    qsub_id=`qsub -l nodes=1:spr:ppn=2 -d . -v $2 $script`
+    # qsub_id=`qsub -l nodes=1:spr:ppn=2 -d . -v $2 $script`
+    qsub_id=`qsub -l nodes=1:spr:ram256gb:hbm:ppn=2 -d . -v $2 $script`
     job_id="$(cut -d'.' -f1 <<<"$qsub_id")"
     # Print qstat output
     qstat 
