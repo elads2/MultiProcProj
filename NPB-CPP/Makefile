@@ -17,6 +17,10 @@ sp: header
 SP_IMPROVED: sp_improved
 sp_improved: header	       
 	cd SP_IMPROVED; $(MAKE) CLASS=$(CLASS)
+
+SP_GPU: sp_gpu
+sp_gpu: header
+	cd SP_GPU; $(MAKE) CLASS=$(CLASS)
 		       
 LU: lu		       
 lu: header	       

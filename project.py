@@ -20,7 +20,12 @@ def run_benchmark(script_name: str, class_type: str, num_threads: int):
     """
     Run benchmark sh file
     """
-    subprocess.call(['./../q_cpu.sh', f'{script_name}.sh', f'class_type={class_type},OMP_NUM_THREADS={num_threads}'])
+    if 'cpu' in script_name:
+        q_sub = 'cpu'
+    else:
+        q_sub = 'gpu'
+    subprocess.call(
+        [f'./../q_{q_sub}.sh', f'{script_name}.sh', f'class_type={class_type},OMP_NUM_THREADS={num_threads}'])
 
 
 def get_run_duration(results_path: Path) -> float:
