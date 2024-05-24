@@ -1,5 +1,4 @@
 import os
-import pathlib
 import subprocess
 from pathlib import Path
 from enum import Enum
@@ -40,12 +39,18 @@ def get_results_path(script_name: str) -> Path:
 
 def main():
     run_type = RunType.RUN_CPU
-    
+    class_type = 'S'
+    times_to_run = 1
+
+    total_run_duration = 0
     os.chdir('runs')
     runs_pwd = os.getcwd()
-    run_benchmark(run_type.value, 'S')
-    os.chdir(runs_pwd)
-    print(f"{get_run_duration(get_results_path(run_type.value))}")
+    for run_index in range(times_to_run):
+        run_benchmark(run_type.value, class_type)
+        os.chdir(runs_pwd)
+        total_run_duration += get_run_duration(get_results_path(run_type.value))
+    average_run_duration = total_run_duration / times_to_run
+    print(f"Average run duration {average_run_duration}s")
 
 
 if __name__ == '__main__':
