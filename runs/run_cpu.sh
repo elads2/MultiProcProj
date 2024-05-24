@@ -4,6 +4,9 @@ cd ../NPB-CPP/
 make sp CLASS=$class_type
 echo "hi"
 echo $HOSTNAME
-vtune -collect performance-snapshot -collect hotspots ./bin/sp.$class_type
-# ./bin/sp.$class_type
+if [[ "$is_vtune" -eq "True" ]]; then
+  vtune -collect performance-snapshot -collect hotspots ./bin/sp.$class_type
+else
+  ./bin/sp.$class_type
+fi
 echo "DONE"
