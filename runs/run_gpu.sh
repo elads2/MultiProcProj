@@ -8,5 +8,11 @@ then
     echo "make"
     make sp_gpu CLASS=$class_type
 fi
-./bin/sp.$class_type
+if [ $is_vtune -eq 1 ]
+then
+    echo "use vtune"
+    vtune -collect gpu-offload ./bin/sp.$class_type
+else
+    ./bin/sp.$class_type
+fi
 echo "DONE"
