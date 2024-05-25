@@ -61,7 +61,13 @@ def get_results_path(script_name: str, timeout: float = 500) -> Path:
         file_list = [f for f in os.listdir() if os.path.isfile(f)]
         for file_name in file_list:
             if '.o' in file_name and file_name.split('.')[0] == script_name:
-                return Path(file_name)
+                # try to make sure it can be opened
+                try:
+                    with open(file_name, 'r') as _:
+                        pass
+                    return Path(file_name)
+                except PermissionError:
+                    pass
     raise Exception('Results file not found')
 
 
