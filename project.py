@@ -11,6 +11,7 @@ class RunType(Enum):
     RUN_CPU = 'run_cpu'
     RUN_CPU_IMPROVED = 'run_cpu_improved'
     RUN_GPU = 'run_gpu'
+    RUN_CPU_CLEAN = 'run_cpu_clean'
 
 
 CLASS_TYPES = ['S', 'W', 'A', 'B', 'C', 'D', 'E', 'F']
@@ -36,7 +37,9 @@ def run_benchmark(script_name: str, class_type: str, num_threads: int, is_make: 
     else:
         is_make_value = 0
     subprocess.call(
-        [f'./../q_{q_sub}.sh', f'{script_name}.sh', f'class_type={class_type},OMP_NUM_THREADS={num_threads},is_make={is_make_value}'])
+        [f'./../q_{q_sub}.sh',
+         f'{script_name}.sh',
+         f'class_type={class_type},OMP_NUM_THREADS={num_threads},is_make={is_make_value}'])
 
 
 def get_run_duration(results_path: Path) -> float:
