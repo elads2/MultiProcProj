@@ -369,7 +369,11 @@ void compute_rhs(){
 	 * and the speed of sound. 
 	 * ---------------------------------------------------------------------
 	 */
-	#pragma omp target teams distribute parallel for collapse(3) num_teams(10) map(from:rho_i[:SQUARE_SIZE]) map(to:u[:RHS_SIZE]) map(from:us[:SQUARE_SIZE]) map(from:vs[:SQUARE_SIZE]) map(from:ws[:SQUARE_SIZE]) map(from:square[:SQUARE_SIZE]) map(from:qs[:SQUARE_SIZE]) map(from:speed[:SQUARE_SIZE])
+	#pragma omp target enter data map(to:u[:RHS_SIZE]) map(alloc:rho_i[:SQUARE_SIZE])\
+		map(to:forcing[:RHS_SIZE]) map(alloc:us[:SQUARE_SIZE]) map(alloc:vs[:SQUARE_SIZE])\
+		map(alloc:ws[:SQUARE_SIZE]) map(alloc:qs[:SQUARE_SIZE]) map(alloc:square[:SQUARE_SIZE])\
+		map(alloc:speed[:SQUARE_SIZE]) map(alloc:rhs[:RHS_SIZE])
+	#pragma omp target teams distribute parallel for collapse(3) num_teams(10)
 	for(k=0; k<=grid_points[2]-1; k++){
 		for(j=0; j<=grid_points[1]-1; j++){
 			for(i=0; i<=grid_points[0]-1; i++){
@@ -400,6 +404,8 @@ void compute_rhs(){
 	 * including the boundary                   
 	 * ---------------------------------------------------------------------
 	 */
+	//TODO: not dependent on previous loop
+	#pragma omp target simd
 	for(k=0; k<=grid_points[2]-1; k++){
 		for(j=0; j<=grid_points[1]-1; j++){
 			for(i=0; i<=grid_points[0]-1; i++){
@@ -415,6 +421,7 @@ void compute_rhs(){
 	 * ---------------------------------------------------------------------
 	 */
 	if(timeron && thread_id==0){timer_start(T_RHSX);}
+	#pragma omp target teams distribute parallel for num_teams(10)
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -491,6 +498,10 @@ void compute_rhs(){
 			}
 		}
 	}
+	#pragma omp target exit data map(from:u[:RHS_SIZE]) map(from:rho_i[:SQUARE_SIZE]) map(from:forcing[:RHS_SIZE])\
+		map(from:us[:SQUARE_SIZE]) map(from:vs[:SQUARE_SIZE]) map(from:ws[:SQUARE_SIZE])\
+		map(from:qs[:SQUARE_SIZE]) map(from:square[:SQUARE_SIZE]) map(from:speed[:SQUARE_SIZE])\
+		map(from:rhs[:RHS_SIZE])
 	if(timeron && thread_id==0){timer_stop(T_RHSX);}
 	/*
 	 * ---------------------------------------------------------------------
