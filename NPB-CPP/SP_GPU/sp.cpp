@@ -108,6 +108,7 @@ static double ce[13][5];
 #else
 #define SQUARE_SIZE sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1))
 #define RHS_SIZE SQUARE_SIZE*5
+#define TEAMS_AMOUNT 10
 static double (*u)[JMAXP+1][IMAXP+1][5]=(double(*)[JMAXP+1][IMAXP+1][5])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)*(5)));
 static double (*us)[JMAXP+1][IMAXP+1]=(double(*)[JMAXP+1][IMAXP+1])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)));
 static double (*vs)[JMAXP+1][IMAXP+1]=(double(*)[JMAXP+1][IMAXP+1])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)));
@@ -373,7 +374,7 @@ void compute_rhs(){
 		map(to:forcing[:RHS_SIZE]) map(alloc:us[:SQUARE_SIZE]) map(alloc:vs[:SQUARE_SIZE])\
 		map(alloc:ws[:SQUARE_SIZE]) map(alloc:qs[:SQUARE_SIZE]) map(alloc:square[:SQUARE_SIZE])\
 		map(alloc:speed[:SQUARE_SIZE]) map(alloc:rhs[:RHS_SIZE])
-	#pragma omp target teams distribute parallel for collapse(3) num_teams(10)
+	#pragma omp target teams distribute parallel for collapse(3) num_teams(TEAMS_AMOUNT)
 	for(k=0; k<=grid_points[2]-1; k++){
 		for(j=0; j<=grid_points[1]-1; j++){
 			for(i=0; i<=grid_points[0]-1; i++){
@@ -421,7 +422,7 @@ void compute_rhs(){
 	 * ---------------------------------------------------------------------
 	 */
 	if(timeron && thread_id==0){timer_start(T_RHSX);}
-	#pragma omp target teams distribute parallel for num_teams(10)
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -498,10 +499,6 @@ void compute_rhs(){
 			}
 		}
 	}
-	#pragma omp target exit data map(from:u[:RHS_SIZE]) map(from:rho_i[:SQUARE_SIZE]) map(from:forcing[:RHS_SIZE])\
-		map(from:us[:SQUARE_SIZE]) map(from:vs[:SQUARE_SIZE]) map(from:ws[:SQUARE_SIZE])\
-		map(from:qs[:SQUARE_SIZE]) map(from:square[:SQUARE_SIZE]) map(from:speed[:SQUARE_SIZE])\
-		map(from:rhs[:RHS_SIZE])
 	if(timeron && thread_id==0){timer_stop(T_RHSX);}
 	/*
 	 * ---------------------------------------------------------------------
@@ -509,6 +506,7 @@ void compute_rhs(){
 	 * ---------------------------------------------------------------------
 	 */
 	if(timeron && thread_id==0){timer_start(T_RHSY);}
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -596,6 +594,7 @@ void compute_rhs(){
 	 * ---------------------------------------------------------------------
 	 */
 	if(timeron && thread_id==0){timer_start(T_RHSZ);}
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -637,6 +636,7 @@ void compute_rhs(){
 	 * ---------------------------------------------------------------------
 	 */
 	k=1;
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for(j=1; j<=ny2; j++){
 		for(i=1; i<=nx2; i++){
 			for(m=0; m<5; m++){
@@ -646,6 +646,7 @@ void compute_rhs(){
 		}
 	}
 	k=2;
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for(j=1; j<=ny2; j++){
 		for(i=1; i<=nx2; i++){
 			for(m=0; m<5; m++){
@@ -655,6 +656,7 @@ void compute_rhs(){
 			}
 		}
 	}
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for(k=3; k<=nz2-2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -668,6 +670,7 @@ void compute_rhs(){
 		}
 	}
 	k=nz2-1;
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for(j=1; j<=ny2; j++){
 		for(i=1; i<=nx2; i++){
 			for(m=0; m<5; m++){
@@ -678,6 +681,7 @@ void compute_rhs(){
 		}
 	}
 	k=nz2;
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for(j=1; j<=ny2; j++){
 		for(i=1; i<=nx2; i++){
 			for(m=0; m<5; m++){
@@ -687,6 +691,7 @@ void compute_rhs(){
 		}
 	}
 	if(timeron && thread_id==0){timer_stop(T_RHSZ);}
+	#pragma omp target teams distribute parallel for simd num_teams(TEAMS_AMOUNT)
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -696,6 +701,10 @@ void compute_rhs(){
 			}
 		}
 	}
+	#pragma omp target exit data map(from:u[:RHS_SIZE]) map(from:rho_i[:SQUARE_SIZE]) map(from:forcing[:RHS_SIZE])\
+		map(from:us[:SQUARE_SIZE]) map(from:vs[:SQUARE_SIZE]) map(from:ws[:SQUARE_SIZE])\
+		map(from:qs[:SQUARE_SIZE]) map(from:square[:SQUARE_SIZE]) map(from:speed[:SQUARE_SIZE])\
+		map(from:rhs[:RHS_SIZE])
 	if(timeron && thread_id==0){timer_stop(T_RHS);}
 }
 
