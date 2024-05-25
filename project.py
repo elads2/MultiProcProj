@@ -79,7 +79,7 @@ def main():
     run_type = RunType.RUN_GPU
     class_type = 'B'
     times_to_run = 1
-    num_threads = 48
+    num_threads = 8
     is_vtune = False
 
     total_run_duration = 0
