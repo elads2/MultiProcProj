@@ -12,6 +12,7 @@ NPB-CPP/bin*
 NPB-CPP/SP/npbparams.hpp
 NPB-CPP/SP_IMPROVED/npbparams.hpp
 NPB-CPP/SP_GPU/npbparams.hpp
+NPB-CPP/SP_CPU_CLEAN/npbparams.hpp
 NPB-CPP/sys/setparams
 # pycharm
 .idea
