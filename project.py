@@ -47,9 +47,10 @@ def get_run_duration(results_path: Path) -> float:
         for line in results_file.readlines():
             if RUN_TIME_STRING in line:
                 return float(line.split()[-1])
+    raise Exception('Run duration not found in output file')
 
 
-def get_results_path(script_name: str, timeout: float = 300) -> Path:
+def get_results_path(script_name: str, timeout: float = 500) -> Path:
     start_time = time.time()
     while time.time() - start_time < timeout:
         file_list = [f for f in os.listdir() if os.path.isfile(f)]
