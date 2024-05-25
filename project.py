@@ -18,7 +18,9 @@ BINS_PATH = Path('NPB-CPP', 'bin')
 
 
 def remove_bin(class_type: str):
-    BINS_PATH.joinpath(f'SP.{class_type}')
+    bin_path = BINS_PATH.joinpath(f'sp.{class_type}')
+    if bin_path.exists():
+        bin_path.unlink()
 
 
 def run_benchmark(script_name: str, class_type: str, num_threads: int):
@@ -53,7 +55,7 @@ def get_results_path(script_name: str, timeout: float = 100) -> Path:
 def main():
     run_type = RunType.RUN_GPU
     class_type = 'S'
-    times_to_run = 5
+    times_to_run = 1
     num_threads = 1
 
     total_run_duration = 0
