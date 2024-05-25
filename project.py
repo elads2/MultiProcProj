@@ -49,7 +49,7 @@ def get_run_duration(results_path: Path) -> float:
                 return float(line.split()[-1])
 
 
-def get_results_path(script_name: str, timeout: float = 100) -> Path:
+def get_results_path(script_name: str, timeout: float = 300) -> Path:
     start_time = time.time()
     while time.time() - start_time < timeout:
         file_list = [f for f in os.listdir() if os.path.isfile(f)]
@@ -61,9 +61,9 @@ def get_results_path(script_name: str, timeout: float = 100) -> Path:
 
 def main():
     run_type = RunType.RUN_GPU
-    class_type = 'A'
+    class_type = 'B'
     times_to_run = 1
-    num_threads = 1
+    num_threads = 48
 
     total_run_duration = 0
     remove_bin(class_type)
