@@ -5,6 +5,7 @@ from enum import Enum
 import time
 
 RUN_TIME_STRING = 'Time in seconds'
+VERIFICATION_STRING = ' Verification    ='
 
 
 class RunType(Enum):
@@ -46,7 +47,11 @@ def get_run_duration(results_path: Path) -> float:
     with open(results_path, 'r') as results_file:
         for line in results_file.readlines():
             if RUN_TIME_STRING in line:
-                return float(line.split()[-1])
+                run_duration = float(line.split()[-1])
+            if VERIFICATION_STRING in line:
+                if 'UNSUCCESSFUL' in line:
+                    raise Exception('Verification was unsuccessful')
+                return run_duration
     raise Exception('Run duration not found in output file')
 
 
