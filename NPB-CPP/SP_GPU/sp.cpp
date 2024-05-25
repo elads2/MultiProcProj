@@ -336,7 +336,7 @@ void add(){
 	int thread_id = omp_get_thread_num();
 
 	if(timeron && thread_id==0){timer_start(T_ADD);}
-	#pragma omp target simd map(to:rhs[:RHS_SIZE]) map(tofrom:u[:RHS_SIZE])
+	#pragma omp target simd
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -350,12 +350,20 @@ void add(){
 }
 
 void adi(){
+	#pragma omp target enter data map(to:u[:RHS_SIZE]) map(alloc:rho_i[:SQUARE_SIZE])\
+		map(to:forcing[:RHS_SIZE]) map(alloc:us[:SQUARE_SIZE]) map(alloc:vs[:SQUARE_SIZE])\
+		map(alloc:ws[:SQUARE_SIZE]) map(alloc:qs[:SQUARE_SIZE]) map(alloc:square[:SQUARE_SIZE])\
+		map(alloc:speed[:SQUARE_SIZE]) map(alloc:rhs[:RHS_SIZE])
 	compute_rhs();
 	txinvr();
 	x_solve();
 	y_solve();
 	z_solve();
 	add();
+	#pragma omp target exit data map(from:u[:RHS_SIZE]) map(from:rho_i[:SQUARE_SIZE]) map(from:forcing[:RHS_SIZE])\
+		map(from:us[:SQUARE_SIZE]) map(from:vs[:SQUARE_SIZE]) map(from:ws[:SQUARE_SIZE])\
+		map(from:qs[:SQUARE_SIZE]) map(from:square[:SQUARE_SIZE]) map(from:speed[:SQUARE_SIZE])\
+		map(from:rhs[:RHS_SIZE])
 }
 
 void compute_rhs(){
@@ -370,10 +378,6 @@ void compute_rhs(){
 	 * and the speed of sound. 
 	 * ---------------------------------------------------------------------
 	 */
-	#pragma omp target enter data map(to:u[:RHS_SIZE]) map(alloc:rho_i[:SQUARE_SIZE])\
-		map(to:forcing[:RHS_SIZE]) map(alloc:us[:SQUARE_SIZE]) map(alloc:vs[:SQUARE_SIZE])\
-		map(alloc:ws[:SQUARE_SIZE]) map(alloc:qs[:SQUARE_SIZE]) map(alloc:square[:SQUARE_SIZE])\
-		map(alloc:speed[:SQUARE_SIZE]) map(alloc:rhs[:RHS_SIZE])
 	#pragma omp target teams distribute parallel for collapse(3) num_teams(TEAMS_AMOUNT)
 	for(k=0; k<=grid_points[2]-1; k++){
 		for(j=0; j<=grid_points[1]-1; j++){
@@ -701,10 +705,6 @@ void compute_rhs(){
 			}
 		}
 	}
-	#pragma omp target exit data map(from:u[:RHS_SIZE]) map(from:rho_i[:SQUARE_SIZE]) map(from:forcing[:RHS_SIZE])\
-		map(from:us[:SQUARE_SIZE]) map(from:vs[:SQUARE_SIZE]) map(from:ws[:SQUARE_SIZE])\
-		map(from:qs[:SQUARE_SIZE]) map(from:square[:SQUARE_SIZE]) map(from:speed[:SQUARE_SIZE])\
-		map(from:rhs[:RHS_SIZE])
 	if(timeron && thread_id==0){timer_stop(T_RHS);}
 }
 
@@ -1561,6 +1561,7 @@ void txinvr(){
 	int thread_id = omp_get_thread_num();
 
 	if(timeron && thread_id==0){timer_start(T_TXINVR);}
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -1600,6 +1601,7 @@ void tzetar(){
 	int thread_id = omp_get_thread_num();
 
 	if(timeron && thread_id==0){timer_start(T_TZETAR);}
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -1942,6 +1944,7 @@ void x_solve(){
 
 	if(timeron && thread_id==0){timer_start(T_XSOLVE);}
 
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for(k=1; k<=nz2; k++){
 		double cv[PROBLEM_SIZE], rhon[PROBLEM_SIZE];
 		double lhs[IMAXP+1][IMAXP+1][5];
@@ -2230,6 +2233,7 @@ void y_solve(){
 	int thread_id = omp_get_thread_num();
 
 	if(timeron && thread_id==0){timer_start(T_YSOLVE);}
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for(k=1; k<=grid_points[2]-2; k++){
 		double cv[PROBLEM_SIZE], rhoq[PROBLEM_SIZE];
 		double lhs[IMAXP+1][IMAXP+1][5];
@@ -2510,6 +2514,7 @@ void z_solve(){
 	int thread_id = omp_get_thread_num();
 	
 	if(timeron && thread_id==0){timer_start(T_ZSOLVE);}
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for(j=1; j<=ny2; j++){
 		double cv[PROBLEM_SIZE], rhos[PROBLEM_SIZE];
 		double lhs[IMAXP+1][IMAXP+1][5];
