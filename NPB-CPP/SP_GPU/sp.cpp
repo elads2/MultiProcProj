@@ -369,7 +369,7 @@ void compute_rhs(){
 	 * and the speed of sound. 
 	 * ---------------------------------------------------------------------
 	 */
-	#pragma omp target parallel for map(from:rho_i[:SQUARE_SIZE]) map(to:u[:RHS_SIZE]) map(from:us[:SQUARE_SIZE]) map(from:vs[:SQUARE_SIZE]) map(from:ws[:SQUARE_SIZE]) map(from:square[:SQUARE_SIZE]) map(from:qs[:SQUARE_SIZE]) map(speed:qs[:SQUARE_SIZE])
+	#pragma omp target parallel for map(from:rho_i[:SQUARE_SIZE]) map(to:u[:RHS_SIZE]) map(from:us[:SQUARE_SIZE]) map(from:vs[:SQUARE_SIZE]) map(from:ws[:SQUARE_SIZE]) map(from:square[:SQUARE_SIZE]) map(from:qs[:SQUARE_SIZE]) map(from:speed[:SQUARE_SIZE])
 	for(k=0; k<=grid_points[2]-1; k++){
 		for(j=0; j<=grid_points[1]-1; j++){
 			for(i=0; i<=grid_points[0]-1; i++){
