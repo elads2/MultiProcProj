@@ -23,7 +23,7 @@ def remove_bin(class_type: str):
         bin_path.unlink()
 
 
-def run_benchmark(script_name: str, class_type: str, num_threads: int):
+def run_benchmark(script_name: str, class_type: str, num_threads: int, is_make: bool):
     """
     Run benchmark sh file
     """
@@ -31,8 +31,12 @@ def run_benchmark(script_name: str, class_type: str, num_threads: int):
         q_sub = 'cpu'
     else:
         q_sub = 'gpu'
+    if is_make:
+        is_make_value = 1
+    else:
+        is_make_value = 0
     subprocess.call(
-        [f'./../q_{q_sub}.sh', f'{script_name}.sh', f'class_type={class_type},OMP_NUM_THREADS={num_threads}'])
+        [f'./../q_{q_sub}.sh', f'{script_name}.sh', f'class_type={class_type},OMP_NUM_THREADS={num_threads},is_make={is_make_value}'])
 
 
 def get_run_duration(results_path: Path) -> float:
@@ -63,7 +67,10 @@ def main():
     os.chdir('runs')
     runs_pwd = os.getcwd()
     for run_index in range(times_to_run):
-        run_benchmark(run_type.value, class_type, num_threads)
+        if run_index == 0:
+            run_benchmark(run_type.value, class_type, num_threads, is_make=True)
+        else:
+            run_benchmark(run_type.value, class_type, num_threads, is_make=False)
         os.chdir(runs_pwd)
         total_run_duration += get_run_duration(get_results_path(run_type.value))
     average_run_duration = total_run_duration / times_to_run
