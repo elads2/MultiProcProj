@@ -697,7 +697,7 @@ void compute_rhs(){
 		}
 	}
 	if(timeron && thread_id==0){timer_stop(T_RHSZ);}
-	#pragma omp target teams distribute parallel for simd num_teams(TEAMS_AMOUNT)
+	#pragma omp target simd
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
