@@ -106,7 +106,7 @@ static double lhsp[IMAXP+1][IMAXP+1][5];
 static double lhsm[IMAXP+1][IMAXP+1][5];
 static double ce[13][5];
 #else
-#define SQUARE_SIZE sizeof(double)*(KMAX)*(JMAXP+1)*(IMAXP+1)
+#define SQUARE_SIZE sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1))
 #define RHS_SIZE SQUARE_SIZE*5
 static double (*u)[JMAXP+1][IMAXP+1][5]=(double(*)[JMAXP+1][IMAXP+1][5])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)*(5)));
 static double (*us)[JMAXP+1][IMAXP+1]=(double(*)[JMAXP+1][IMAXP+1])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)));
@@ -335,8 +335,7 @@ void add(){
 	int thread_id = omp_get_thread_num();
 
 	if(timeron && thread_id==0){timer_start(T_ADD);}
-	#pragma omp target parallel for simd map(to:rhs[:RHS_SIZE]) \
-		map(tofrom:u[:RHS_SIZE])
+	#pragma omp target simd map(to:rhs[:RHS_SIZE]) map(tofrom:u[:RHS_SIZE])
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
