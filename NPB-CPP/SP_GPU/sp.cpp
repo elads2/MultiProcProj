@@ -246,10 +246,16 @@ int main(int argc, char* argv[]){
 	 * do one time step to touch all code, and reinitialize
 	 * ---------------------------------------------------------------------
 	 */
+	#pragma omp target enter data map(to:u[:RHS_SIZE]) map(alloc:rho_i[:SQUARE_SIZE])\
+		map(to:forcing[:RHS_SIZE]) map(alloc:us[:SQUARE_SIZE]) map(alloc:vs[:SQUARE_SIZE])\
+		map(alloc:ws[:SQUARE_SIZE]) map(alloc:qs[:SQUARE_SIZE]) map(alloc:square[:SQUARE_SIZE])\
+		map(alloc:speed[:SQUARE_SIZE]) map(alloc:rhs[:RHS_SIZE])
   	{
 		adi();
 	}
+	#pragma omp target exit data map(from:u[:RHS_SIZE])
 	initialize();
+	#pragma omp target enter data map(to:u[:RHS_SIZE])
 	for(i=1;i<=T_LAST;i++){timer_clear(i);}
 	timer_start(1);
   	{
@@ -260,6 +266,10 @@ int main(int argc, char* argv[]){
 			adi();
 		}
 	}
+	#pragma omp target exit data map(from:u[:RHS_SIZE]) map(from:rho_i[:SQUARE_SIZE]) map(from:forcing[:RHS_SIZE])\
+		map(from:us[:SQUARE_SIZE]) map(from:vs[:SQUARE_SIZE]) map(from:ws[:SQUARE_SIZE])\
+		map(from:qs[:SQUARE_SIZE]) map(from:square[:SQUARE_SIZE]) map(from:speed[:SQUARE_SIZE])\
+		map(from:rhs[:RHS_SIZE])
 	timer_stop(1);
 	tmax=timer_read(1);
 	verify(niter, &class_npb, &verified);
@@ -350,20 +360,12 @@ void add(){
 }
 
 void adi(){
-	#pragma omp target enter data map(to:u[:RHS_SIZE]) map(alloc:rho_i[:SQUARE_SIZE])\
-		map(to:forcing[:RHS_SIZE]) map(alloc:us[:SQUARE_SIZE]) map(alloc:vs[:SQUARE_SIZE])\
-		map(alloc:ws[:SQUARE_SIZE]) map(alloc:qs[:SQUARE_SIZE]) map(alloc:square[:SQUARE_SIZE])\
-		map(alloc:speed[:SQUARE_SIZE]) map(alloc:rhs[:RHS_SIZE])
 	compute_rhs();
 	txinvr();
 	x_solve();
 	y_solve();
 	z_solve();
 	add();
-	#pragma omp target exit data map(from:u[:RHS_SIZE]) map(from:rho_i[:SQUARE_SIZE]) map(from:forcing[:RHS_SIZE])\
-		map(from:us[:SQUARE_SIZE]) map(from:vs[:SQUARE_SIZE]) map(from:ws[:SQUARE_SIZE])\
-		map(from:qs[:SQUARE_SIZE]) map(from:square[:SQUARE_SIZE]) map(from:speed[:SQUARE_SIZE])\
-		map(from:rhs[:RHS_SIZE])
 }
 
 void compute_rhs(){
