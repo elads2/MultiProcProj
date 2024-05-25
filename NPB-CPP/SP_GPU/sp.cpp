@@ -266,9 +266,9 @@ int main(int argc, char* argv[]){
 			adi();
 		}
 	}
-	#pragma omp target exit data map(from:u[:RHS_SIZE]) map(from:rho_i[:SQUARE_SIZE]) map(from:forcing[:RHS_SIZE])\
-		map(from:us[:SQUARE_SIZE]) map(from:vs[:SQUARE_SIZE]) map(from:ws[:SQUARE_SIZE])\
-		map(from:qs[:SQUARE_SIZE]) map(from:square[:SQUARE_SIZE]) map(from:speed[:SQUARE_SIZE])\
+	#pragma omp target exit data map(from:u[:RHS_SIZE]) map(delete:rho_i[:SQUARE_SIZE]) map(delete:forcing[:RHS_SIZE])\
+		map(delete:us[:SQUARE_SIZE]) map(delete:vs[:SQUARE_SIZE]) map(delete:ws[:SQUARE_SIZE])\
+		map(delete:qs[:SQUARE_SIZE]) map(delete:square[:SQUARE_SIZE]) map(delete:speed[:SQUARE_SIZE])\
 		map(from:rhs[:RHS_SIZE])
 	timer_stop(1);
 	tmax=timer_read(1);
