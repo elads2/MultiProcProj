@@ -44,7 +44,8 @@ def run_benchmark(script_name: str, class_type: str, num_threads: int, is_make: 
     subprocess.call(
         [f'./../q_{q_sub}.sh',
          f'{script_name}.sh',
-         f'class_type={class_type},OMP_NUM_THREADS={num_threads},is_make={is_make_value},is_vtune={is_vtune_value}'])
+         f'class_type={class_type},OMP_NUM_THREADS={num_threads},is_make={is_make_value},is_vtune={is_vtune_value},'
+         f'OMP_TARGET_OFFLOAD=MANDATORY'])
 
 
 def get_run_duration(results_path: Path) -> float:
