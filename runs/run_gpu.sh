@@ -11,7 +11,7 @@ fi
 if [ $is_vtune -eq 1 ]
 then
     echo "use vtune"
-    vtune -collect hotspots -collect gpu-offload ./bin/sp.$class_type
+    vtune -collect gpu-offload ./bin/sp.$class_type
 else
     ./bin/sp.$class_type
 fi
