@@ -344,6 +344,7 @@ int main(int argc, char* argv[]){
  * addition of update to the vector u
  * ---------------------------------------------------------------------
  */
+#pragma omp declare target
 void add(){
 	int i, j, k, m;
 	int thread_id = omp_get_thread_num();
@@ -712,6 +713,7 @@ void compute_rhs(){
 	}
 	if(timeron && thread_id==0){timer_stop(T_RHS);}
 }
+#pragma omp end declare target
 
 /*
  * ---------------------------------------------------------------------
@@ -1282,6 +1284,7 @@ void lhsinitj(int nj, int ni){
  * block-diagonal matrix-vector multiplication              
  * ---------------------------------------------------------------------
  */
+#pragma omp declare target
 void ninvr(){
 	int i, j, k;
 	double r1, r2, r3, r4, r5, t1, t2;
@@ -1342,6 +1345,7 @@ void pinvr(){
 	}
 	if(timeron && thread_id==0){timer_stop(T_PINVR);}
 }
+#pragma omp end declare target
 
 void rhs_norm(double rms[]){
 	int i, j, k, d, m;
@@ -1602,6 +1606,7 @@ void txinvr(){
  * block-diagonal matrix-vector multiplication                       
  * ---------------------------------------------------------------------
  */
+#pragma omp declare target
 void tzetar(){
 	int i, j, k;
 	double t1, t2, t3, ac, xvel, yvel, zvel, r1, r2, r3, r4, r5, btuz, ac2u, uzik1;
@@ -1638,7 +1643,7 @@ void tzetar(){
 	}
 	if(timeron && thread_id==0){timer_stop(T_TZETAR);}
 }
-
+#pragma omp end declare target
 /*
  * ---------------------------------------------------------------------
  * verification routine                         
@@ -1944,6 +1949,7 @@ void verify(int no_time_steps, char* class_npb, boolean* verified){
  * systems for the x-lines. boundary conditions are non-periodic
  * ---------------------------------------------------------------------
  */
+#pragma omp declare target
 void x_solve(){
 	int i, j, k, i1, i2, m;
 	double ru1, fac1, fac2;
@@ -2793,3 +2799,4 @@ void z_solve(){
 	if(timeron && thread_id==0){timer_stop(T_ZSOLVE);}
 	tzetar();
 }
+#pragma omp end declare target
