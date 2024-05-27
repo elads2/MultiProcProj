@@ -88,6 +88,10 @@ static double us[KMAX][JMAXP+1][IMAXP+1];
 static double vs[KMAX][JMAXP+1][IMAXP+1];
 static double ws[KMAX][JMAXP+1][IMAXP+1];
 static double qs[KMAX][JMAXP+1][IMAXP+1];
+static double u_diff[KMAX][JMAXP+1][IMAXP+1][5];
+static double vs_diff[KMAX][JMAXP+1][IMAXP+1];
+static double ws_diff[KMAX][JMAXP+1][IMAXP+1];
+static double qs_diff[KMAX][JMAXP+1][IMAXP+1];
 static double rho_i[KMAX][JMAXP+1][IMAXP+1];
 static double speed[KMAX][JMAXP+1][IMAXP+1];
 static double square[KMAX][JMAXP+1][IMAXP+1];
@@ -107,10 +111,14 @@ static double lhsm[IMAXP+1][IMAXP+1][5];
 static double ce[13][5];
 #else
 static double (*u)[JMAXP+1][IMAXP+1][5]=(double(*)[JMAXP+1][IMAXP+1][5])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)*(5)));
+static double (*u_diff)[JMAXP+1][IMAXP+1][5]=(double(*)[JMAXP+1][IMAXP+1][5])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)*(5)));
 static double (*us)[JMAXP+1][IMAXP+1]=(double(*)[JMAXP+1][IMAXP+1])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)));
 static double (*vs)[JMAXP+1][IMAXP+1]=(double(*)[JMAXP+1][IMAXP+1])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)));
 static double (*ws)[JMAXP+1][IMAXP+1]=(double(*)[JMAXP+1][IMAXP+1])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)));
 static double (*qs)[JMAXP+1][IMAXP+1]=(double(*)[JMAXP+1][IMAXP+1])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)));
+static double (*vs_diff)[JMAXP+1][IMAXP+1]=(double(*)[JMAXP+1][IMAXP+1])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)));
+static double (*ws_diff)[JMAXP+1][IMAXP+1]=(double(*)[JMAXP+1][IMAXP+1])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)));
+static double (*qs_diff)[JMAXP+1][IMAXP+1]=(double(*)[JMAXP+1][IMAXP+1])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)));
 static double (*rho_i)[JMAXP+1][IMAXP+1]=(double(*)[JMAXP+1][IMAXP+1])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)));
 static double (*speed)[JMAXP+1][IMAXP+1]=(double(*)[JMAXP+1][IMAXP+1])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)));
 static double (*square)[JMAXP+1][IMAXP+1]=(double(*)[JMAXP+1][IMAXP+1])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)));
@@ -336,8 +344,14 @@ void add(){
 	int thread_id = omp_get_thread_num();
 
 	if(timeron && thread_id==0){timer_start(T_ADD);}
-	#pragma omp for 
-	for(k=1; k<=nz2; k++){
+	
+    int size = KMAX*(JMAXP+1)*(IMAXP+1)*5;
+    #pragma omp for simd
+    for(k=0; k<=size; k++){
+        *(u + 4*k) = u[k] + u*(rhs + 4*k)
+    }
+    /*
+    for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
 				for(m=0; m<5; m++){
@@ -346,6 +360,7 @@ void add(){
 			}
 		}
 	}
+    */
 	if(timeron && thread_id==0){timer_stop(T_ADD);}
 }
 
@@ -370,7 +385,11 @@ void compute_rhs(){
 	 * and the speed of sound. 
 	 * ---------------------------------------------------------------------
 	 */
-	#pragma omp for
+	// int full_size;
+	// full_size = grid_points[2] * grid_points[1] * grid_points[0];
+	// num_threads = OMP_THREAD_LIMIT;
+
+	#pragma omp for collapse(2)
 	for(k=0; k<=grid_points[2]-1; k++){
 		for(j=0; j<=grid_points[1]-1; j++){
 			for(i=0; i<=grid_points[0]-1; i++){
@@ -391,16 +410,28 @@ void compute_rhs(){
 				 */
 				aux=c1c2*rho_inv*(u[k][j][i][4]-square[k][j][i]);
 				speed[k][j][i]=sqrt(aux);
+
+				/*
+				* ---------------------------------------------------------------------
+				* copy the exact forcing term to the right hand side;  because 
+				* this forcing term is known, we can store it on the whole grid
+				* including the boundary                   
+				* ---------------------------------------------------------------------
+				*/
+				rhs[k][j][i][0]=forcing[k][j][i][0];
+				rhs[k][j][i][1]=forcing[k][j][i][1];
+				rhs[k][j][i][2]=forcing[k][j][i][2];
+				rhs[k][j][i][3]=forcing[k][j][i][3];
+				rhs[k][j][i][4]=forcing[k][j][i][4];
 			}
 		}
 	}
-	/*
-	 * ---------------------------------------------------------------------
-	 * copy the exact forcing term to the right hand side;  because 
-	 * this forcing term is known, we can store it on the whole grid
-	 * including the boundary                   
-	 * ---------------------------------------------------------------------
-	 */
+	/* Combined with previous loop
+	* ---------------------------------------------------------------------
+	* copy the exact forcing term to the right hand side;  because 
+	* this forcing term is known, we can store it on the whole grid
+	* including the boundary                   
+	* ---------------------------------------------------------------------
 	#pragma omp for
 	for(k=0; k<=grid_points[2]-1; k++){
 		for(j=0; j<=grid_points[1]-1; j++){
@@ -410,12 +441,33 @@ void compute_rhs(){
 				}
 			}
 		}
-	}
+	} */
 	/*
 	 * ---------------------------------------------------------------------
 	 * compute xi-direction fluxes 
 	 * ---------------------------------------------------------------------
 	 */
+
+	// 1. u[i+1]-2u[i]+u[i-1] = v[i+1]-v[i] | v = u[i] - u[i-1]
+	// (1) saves a multiplication and a subtraction (because v is effectively calculated twice) and possibly allows for simd
+	// (1) can be done for u[k][j][here][0 through 4] as well as vs, ws and qs -- this saves nx*ny*(2*8) calculations
+	#pragma omp for collapse(2)
+	for(k=0; k<=nz2; k++){
+		for(j=0; j<=ny2; j++){
+			for(i=0; i<=nx2; i++){
+				u_diff[k][j][i][0] = u[k][j][i+1][0] - u[k][j][i][0];
+				u_diff[k][j][i][1] = u[k][j][i+1][1] - u[k][j][i][1];
+				u_diff[k][j][i][2] = u[k][j][i+1][2] - u[k][j][i][2];
+				u_diff[k][j][i][3] = u[k][j][i+1][3] - u[k][j][i][3];
+				u_diff[k][j][i][4] = u[k][j][i+1][4] - u[k][j][i][4];
+				vs_diff[k][j][i] = vs[k][j][i+1] - vs[k][j][i];
+				ws_diff[k][j][i] = ws[k][j][i+1] - ws[k][j][i];
+				qs_diff[k][j][i] = qs[k][j][i+1] - qs[k][j][i];
+			}
+		}
+	}
+
+
 	if(timeron && thread_id==0){timer_start(T_RHSX);}
 	#pragma omp for
 	for(k=1; k<=nz2; k++){
@@ -425,25 +477,25 @@ void compute_rhs(){
 				up1=us[k][j][i+1];
 				um1=us[k][j][i-1];
 				rhs[k][j][i][0]=rhs[k][j][i][0]+dx1tx1* 
-					(u[k][j][i+1][0]-2.0*u[k][j][i][0]+u[k][j][i-1][0])-
+					(u_diff[k][j][i][0]-u_diff[k][j][i-1][0])-
 					tx2*(u[k][j][i+1][1]-u[k][j][i-1][1]);
 				rhs[k][j][i][1]=rhs[k][j][i][1]+dx2tx1* 
-					(u[k][j][i+1][1]-2.0*u[k][j][i][1]+u[k][j][i-1][1])+
+					(u_diff[k][j][i][1]-u_diff[k][j][i-1][1])+
 					xxcon2*con43*(up1-2.0*uijk+um1)-
 					tx2*(u[k][j][i+1][1]*up1-u[k][j][i-1][1]*um1+
 							(u[k][j][i+1][4]-square[k][j][i+1]-
 							 u[k][j][i-1][4]+square[k][j][i-1])*c2);
 				rhs[k][j][i][2]=rhs[k][j][i][2]+dx3tx1* 
-					(u[k][j][i+1][2]-2.0*u[k][j][i][2]+u[k][j][i-1][2])+
-					xxcon2*(vs[k][j][i+1]-2.0*vs[k][j][i]+vs[k][j][i-1])-
+					(u_diff[k][j][i][2]-u_diff[k][j][i-1][2])+
+					xxcon2*(vs_diff[k][j][i]-vs_diff[k][j][i-1])-
 					tx2*(u[k][j][i+1][2]*up1-u[k][j][i-1][2]*um1);
 				rhs[k][j][i][3]=rhs[k][j][i][3]+dx4tx1* 
-					(u[k][j][i+1][3]-2.0*u[k][j][i][3]+u[k][j][i-1][3])+
-					xxcon2*(ws[k][j][i+1]-2.0*ws[k][j][i]+ws[k][j][i-1])-
+					(u_diff[k][j][i][3]-u_diff[k][j][i-1][3])+
+					xxcon2*(ws_diff[k][j][i]-ws_diff[k][j][i-1])-
 					tx2*(u[k][j][i+1][3]*up1-u[k][j][i-1][3]*um1);
 				rhs[k][j][i][4]=rhs[k][j][i][4]+dx5tx1* 
-					(u[k][j][i+1][4]-2.0*u[k][j][i][4]+u[k][j][i-1][4])+
-					xxcon3*(qs[k][j][i+1]-2.0*qs[k][j][i]+qs[k][j][i-1])+
+					(u_diff[k][j][i][4]-u_diff[k][j][i-1][4])+
+					xxcon3*(qs_diff[k][j][i]-qs_diff[k][j][i-1])+
 					xxcon4*(up1*up1-2.0*uijk*uijk+um1*um1)+
 					xxcon5*(u[k][j][i+1][4]*rho_i[k][j][i+1]- 
 							2.0*u[k][j][i][4]*rho_i[k][j][i]+
@@ -458,41 +510,42 @@ void compute_rhs(){
 		 * ---------------------------------------------------------------------
 		 */
 		for(j=1; j<=ny2; j++){
-			i=1;
-			for(m=0; m<5; m++){
-				rhs[k][j][i][m]=rhs[k][j][i][m]-dssp* 
-					(5.0*u[k][j][i][m]-4.0*u[k][j][i+1][m]+u[k][j][i+2][m]);
-			}
-			i=2;
-			for(m=0; m<5; m++){
-				rhs[k][j][i][m]=rhs[k][j][i][m]-dssp* 
-					(-4.0*u[k][j][i-1][m]+6.0*u[k][j][i][m]-
-					 4.0*u[k][j][i+1][m]+u[k][j][i+2][m]);
-			}
-		}
-		for(j=1; j<=ny2; j++){
+			// i=1; unrolled loop
+			rhs[k][j][1][0]=rhs[k][j][1][0]-dssp*(5.0*u[k][j][1][0]-4.0*u[k][j][2][0]+u[k][j][3][0]);
+			rhs[k][j][1][1]=rhs[k][j][1][1]-dssp*(5.0*u[k][j][1][1]-4.0*u[k][j][2][1]+u[k][j][3][1]);
+			rhs[k][j][1][2]=rhs[k][j][1][2]-dssp*(5.0*u[k][j][1][2]-4.0*u[k][j][2][2]+u[k][j][3][2]);
+			rhs[k][j][1][3]=rhs[k][j][1][3]-dssp*(5.0*u[k][j][1][3]-4.0*u[k][j][2][3]+u[k][j][3][3]);
+			rhs[k][j][1][4]=rhs[k][j][1][4]-dssp*(5.0*u[k][j][1][4]-4.0*u[k][j][2][4]+u[k][j][3][4]);
+			//i=2; unrolled loop
+			rhs[k][j][2][0]=rhs[k][j][2][0]-dssp*(-4.0*u[k][j][1][0]+6.0*u[k][j][2][0]-4.0*u[k][j][3][0]+u[k][j][4][0]);
+			rhs[k][j][2][1]=rhs[k][j][2][1]-dssp*(-4.0*u[k][j][1][1]+6.0*u[k][j][2][1]-4.0*u[k][j][3][1]+u[k][j][4][1]);
+			rhs[k][j][2][2]=rhs[k][j][2][2]-dssp*(-4.0*u[k][j][1][2]+6.0*u[k][j][2][2]-4.0*u[k][j][3][2]+u[k][j][4][2]);
+			rhs[k][j][2][3]=rhs[k][j][2][3]-dssp*(-4.0*u[k][j][1][3]+6.0*u[k][j][2][3]-4.0*u[k][j][3][3]+u[k][j][4][3]);
+			rhs[k][j][2][4]=rhs[k][j][2][4]-dssp*(-4.0*u[k][j][1][4]+6.0*u[k][j][2][4]-4.0*u[k][j][3][4]+u[k][j][4][4]);
+			
 			for(i=3; i<=nx2-2; i++){
-				for(m=0; m<5; m++){
-					rhs[k][j][i][m]=rhs[k][j][i][m]-dssp* 
-						(u[k][j][i-2][m]-4.0*u[k][j][i-1][m]+ 
-						 6.0*u[k][j][i][m]-4.0*u[k][j][i+1][m]+ 
-						 u[k][j][i+2][m]);
-				}
+				rhs[k][j][i][0]=rhs[k][j][i][0]-dssp*(u[k][j][i-2][0]-4.0*u[k][j][i-1][0]+ 6.0*u[k][j][i][0]-4.0*u[k][j][i+1][0]+ u[k][j][i+2][0]);
+				rhs[k][j][i][1]=rhs[k][j][i][1]-dssp*(u[k][j][i-2][1]-4.0*u[k][j][i-1][1]+ 6.0*u[k][j][i][1]-4.0*u[k][j][i+1][1]+ u[k][j][i+2][1]);
+				rhs[k][j][i][2]=rhs[k][j][i][2]-dssp*(u[k][j][i-2][2]-4.0*u[k][j][i-1][2]+ 6.0*u[k][j][i][2]-4.0*u[k][j][i+1][2]+ u[k][j][i+2][2]);
+				rhs[k][j][i][3]=rhs[k][j][i][3]-dssp*(u[k][j][i-2][3]-4.0*u[k][j][i-1][3]+ 6.0*u[k][j][i][3]-4.0*u[k][j][i+1][3]+ u[k][j][i+2][3]);
+				rhs[k][j][i][4]=rhs[k][j][i][4]-dssp*(u[k][j][i-2][4]-4.0*u[k][j][i-1][4]+ 6.0*u[k][j][i][4]-4.0*u[k][j][i+1][4]+ u[k][j][i+2][4]);
+				
 			}
-		}
-		for(j=1; j<=ny2; j++){
 			i=nx2-1;
-			for(m=0; m<5; m++){
-				rhs[k][j][i][m] = rhs[k][j][i][m]-dssp*
-					(u[k][j][i-2][m]-4.0*u[k][j][i-1][m]+ 
-					 6.0*u[k][j][i][m]-4.0*u[k][j][i+1][m]);
-			}
+			rhs[k][j][i][0] = rhs[k][j][i][0]-dssp*(u[k][j][i-2][0]-4.0*u[k][j][i-1][0]+  6.0*u[k][j][i][0]-4.0*u[k][j][i+1][0]);
+			rhs[k][j][i][1] = rhs[k][j][i][1]-dssp*(u[k][j][i-2][1]-4.0*u[k][j][i-1][1]+  6.0*u[k][j][i][1]-4.0*u[k][j][i+1][1]);
+			rhs[k][j][i][2] = rhs[k][j][i][2]-dssp*(u[k][j][i-2][2]-4.0*u[k][j][i-1][2]+  6.0*u[k][j][i][2]-4.0*u[k][j][i+1][2]);
+			rhs[k][j][i][3] = rhs[k][j][i][3]-dssp*(u[k][j][i-2][3]-4.0*u[k][j][i-1][3]+  6.0*u[k][j][i][3]-4.0*u[k][j][i+1][3]);
+			rhs[k][j][i][4] = rhs[k][j][i][4]-dssp*(u[k][j][i-2][4]-4.0*u[k][j][i-1][4]+  6.0*u[k][j][i][4]-4.0*u[k][j][i+1][4]);
+			
 			i=nx2;
-			for(m=0; m<5; m++){
-				rhs[k][j][i][m] = rhs[k][j][i][m]-dssp*
-					(u[k][j][i-2][m]-4.0*u[k][j][i-1][m]+5.0*u[k][j][i][m]);
-			}
-		}
+			rhs[k][j][i][0] = rhs[k][j][i][0]-dssp*(u[k][j][i-2][0]-4.0*u[k][j][i-1][0]+5.0*u[k][j][i][0]);
+			rhs[k][j][i][1] = rhs[k][j][i][1]-dssp*(u[k][j][i-2][1]-4.0*u[k][j][i-1][1]+5.0*u[k][j][i][1]);
+			rhs[k][j][i][2] = rhs[k][j][i][2]-dssp*(u[k][j][i-2][2]-4.0*u[k][j][i-1][2]+5.0*u[k][j][i][2]);
+			rhs[k][j][i][3] = rhs[k][j][i][3]-dssp*(u[k][j][i-2][3]-4.0*u[k][j][i-1][3]+5.0*u[k][j][i][3]);
+			rhs[k][j][i][4] = rhs[k][j][i][4]-dssp*(u[k][j][i-2][4]-4.0*u[k][j][i-1][4]+5.0*u[k][j][i][4]);
+			
+		} // combined all the j loops
 	}
 	if(timeron && thread_id==0){timer_stop(T_RHSX);}
 	/*
@@ -543,6 +596,7 @@ void compute_rhs(){
 		 */
 		j = 1;
 		for(i=1; i<=nx2; i++){
+			#pragma unroll
 			for(m=0; m<5; m++){
 				rhs[k][j][i][m]=rhs[k][j][i][m]-dssp* 
 					(5.0*u[k][j][i][m]-4.0*u[k][j+1][i][m]+u[k][j+2][i][m]);
@@ -550,6 +604,7 @@ void compute_rhs(){
 		}
 		j = 2;
 		for(i=1; i<=nx2; i++){
+			#pragma unroll
 			for(m = 0; m < 5; m++) {
 				rhs[k][j][i][m]=rhs[k][j][i][m]-dssp* 
 					(-4.0*u[k][j-1][i][m]+6.0*u[k][j][i][m]-
@@ -558,6 +613,7 @@ void compute_rhs(){
 		}
 		for (j=3; j<=ny2-2; j++){
 			for(i=1; i<=nx2; i++){
+				#pragma unroll
 				for(m=0; m<5; m++){
 					rhs[k][j][i][m]=rhs[k][j][i][m]-dssp* 
 						(u[k][j-2][i][m]-4.0*u[k][j-1][i][m]+ 
@@ -568,6 +624,7 @@ void compute_rhs(){
 		}
 		j=ny2-1;
 		for(i=1; i<=nx2; i++){
+			#pragma unroll
 			for(m=0; m<5; m++){
 				rhs[k][j][i][m]=rhs[k][j][i][m]-dssp*
 					(u[k][j-2][i][m]-4.0*u[k][j-1][i][m]+ 
@@ -576,6 +633,7 @@ void compute_rhs(){
 		}
 		j=ny2;
 		for(i=1; i<=nx2; i++){
+			#pragma unroll
 			for(m=0; m<5; m++){
 				rhs[k][j][i][m]=rhs[k][j][i][m]-dssp*
 					(u[k][j-2][i][m]-4.0*u[k][j-1][i][m]+5.0*u[k][j][i][m]);
@@ -589,7 +647,7 @@ void compute_rhs(){
 	 * ---------------------------------------------------------------------
 	 */
 	if(timeron && thread_id==0){timer_start(T_RHSZ);}
-	#pragma omp for
+	#pragma omp for collapse(2)
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -630,10 +688,14 @@ void compute_rhs(){
 	 * add fourth order zeta-direction dissipation                
 	 * ---------------------------------------------------------------------
 	 */
+
+
+
 	k=1;
 	#pragma omp for
 	for(j=1; j<=ny2; j++){
 		for(i=1; i<=nx2; i++){
+			#pragma unroll
 			for(m=0; m<5; m++){
 				rhs[k][j][i][m]=rhs[k][j][i][m]-dssp* 
 					(5.0*u[k][j][i][m]-4.0*u[k+1][j][i][m]+u[k+2][j][i][m]);
@@ -641,9 +703,10 @@ void compute_rhs(){
 		}
 	}
 	k=2;
-	#pragma omp for
+	#pragma omp for collapse(2)
 	for(j=1; j<=ny2; j++){
 		for(i=1; i<=nx2; i++){
+			#pragma unroll
 			for(m=0; m<5; m++){
 				rhs[k][j][i][m]=rhs[k][j][i][m]-dssp* 
 					(-4.0*u[k-1][j][i][m]+6.0*u[k][j][i][m]-
@@ -655,6 +718,7 @@ void compute_rhs(){
 	for(k=3; k<=nz2-2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
+				#pragma unroll
 				for(m=0; m<5; m++){
 					rhs[k][j][i][m]=rhs[k][j][i][m]-dssp* 
 						(u[k-2][j][i][m]-4.0*u[k-1][j][i][m]+ 
@@ -668,6 +732,7 @@ void compute_rhs(){
 	#pragma omp for
 	for(j=1; j<=ny2; j++){
 		for(i=1; i<=nx2; i++){
+			#pragma unroll
 			for(m=0; m<5; m++){
 				rhs[k][j][i][m]=rhs[k][j][i][m]-dssp*
 					(u[k-2][j][i][m]-4.0*u[k-1][j][i][m]+ 
@@ -679,6 +744,7 @@ void compute_rhs(){
 	#pragma omp for
 	for(j=1; j<=ny2; j++){
 		for(i=1; i<=nx2; i++){
+			#pragma unroll
 			for(m=0; m<5; m++){
 				rhs[k][j][i][m]=rhs[k][j][i][m]-dssp*
 					(u[k-2][j][i][m]-4.0*u[k-1][j][i][m]+5.0*u[k][j][i][m]);
@@ -686,10 +752,11 @@ void compute_rhs(){
 		}
 	}
 	if(timeron && thread_id==0){timer_stop(T_RHSZ);}
-	#pragma omp for
+	#pragma omp for collapse(2)
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
+				#pragma unroll
 				for(m=0; m<5; m++){
 					rhs[k][j][i][m]=rhs[k][j][i][m]*dt;
 				}
@@ -747,6 +814,7 @@ void exact_rhs(){
 	for(k=0; k<=grid_points[2]-1; k++){
 		for(j=0; j<= grid_points[1]-1; j++){
 			for(i=0; i<=grid_points[0]-1; i++){
+				#pragma unroll
 				for(m=0; m<5; m++){
 					forcing[k][j][i][m]=0.0;
 				}
@@ -765,10 +833,12 @@ void exact_rhs(){
 			for(i=0; i<=grid_points[0]-1; i++){
 				xi=(double)i*dnxm1;
 				exact_solution(xi, eta, zeta, dtemp);
+				#pragma unroll
 				for(m=0; m<5; m++){
 					ue[m][i]=dtemp[m];
 				}
 				dtpp=1.0/dtemp[0];
+				#pragma unroll
 				for(m=1; m<5; m++){
 					buf[m][i]=dtpp*dtemp[m];
 				}
@@ -809,6 +879,7 @@ void exact_rhs(){
 			 * fourth-order dissipation                         
 			 * ---------------------------------------------------------------------
 			 */
+			#pragma unroll
 			for(m=0; m<5; m++){
 				i=1;
 				forcing[k][j][i][m]=forcing[k][j][i][m]-dssp*
@@ -818,6 +889,7 @@ void exact_rhs(){
 					(-4.0*ue[m][i-1]+6.0*ue[m][i]-
 					 4.0*ue[m][i+1]+ue[m][i+2]);
 			}
+			#pragma unroll
 			for(m=0; m<5; m++){
 				for(i=3; i<=grid_points[0]-4; i++){				
 					forcing[k][j][i][m]=forcing[k][j][i][m]-dssp*
@@ -825,6 +897,7 @@ void exact_rhs(){
 						 6.0*ue[m][i]-4.0*ue[m][i+1]+ue[m][i+2]);
 				}
 			}
+			#pragma unroll
 			for(m=0; m<5; m++){
 				i=grid_points[0]-3;
 				forcing[k][j][i][m]=forcing[k][j][i][m]-dssp*
@@ -848,10 +921,12 @@ void exact_rhs(){
 			for(j=0;j<=grid_points[1]-1;j++){
 				eta=(double)j*dnym1;
 				exact_solution(xi, eta, zeta, dtemp);
+				#pragma unroll
 				for(m=0; m<5; m++){
 					ue[m][j]=dtemp[m];
 				}
 				dtpp=1.0/dtemp[0];
+				#pragma unroll
 				for(m=1; m<5; m++){
 					buf[m][j]=dtpp*dtemp[m];
 				}
@@ -893,6 +968,7 @@ void exact_rhs(){
 			 * fourth-order dissipation                      
 			 * ---------------------------------------------------------------------
 			 */
+			#pragma unroll
 			for(m=0; m<5; m++){
 				j=1;
 				forcing[k][j][i][m]=forcing[k][j][i][m]-dssp*
@@ -902,6 +978,7 @@ void exact_rhs(){
 					(-4.0*ue[m][j-1]+6.0*ue[m][j]-
 					 4.0*ue[m][j+1]+ue[m][j+2]);
 			}
+			#pragma unroll
 			for(m=0; m<5; m++){
 				for(j=3; j<=grid_points[1]-4; j++){				
 					forcing[k][j][i][m]=forcing[k][j][i][m]-dssp*
@@ -909,6 +986,7 @@ void exact_rhs(){
 						 6.0*ue[m][j]-4.0*ue[m][j+1]+ue[m][j+2]);
 				}
 			}
+			#pragma unroll
 			for(m=0; m<5; m++){
 				j=grid_points[1]-3;
 				forcing[k][j][i][m]=forcing[k][j][i][m]-dssp*
@@ -932,10 +1010,12 @@ void exact_rhs(){
 			for(k=0; k<=grid_points[2]-1; k++){
 				zeta=(double)k*dnzm1;
 				exact_solution(xi, eta, zeta, dtemp);
+				#pragma unroll
 				for(m=0; m<5; m++){
 					ue[m][k]=dtemp[m];
 				}
 				dtpp=1.0/dtemp[0];
+				#pragma unroll
 				for(m=1; m<5; m++){
 					buf[m][k]=dtpp*dtemp[m];
 				}
@@ -976,6 +1056,7 @@ void exact_rhs(){
 			 * fourth-order dissipation
 			 * ---------------------------------------------------------------------
 			 */
+			#pragma unroll
 			for(m=0; m<5; m++){
 				k=1;
 				forcing[k][j][i][m]=forcing[k][j][i][m]-dssp*
@@ -985,6 +1066,7 @@ void exact_rhs(){
 					(-4.0*ue[m][k-1]+6.0*ue[m][k]-
 					 4.0*ue[m][k+1]+ue[m][k+2]);
 			}
+			#pragma unroll
 			for(m=0; m<5; m++){
 				for(k=3; k<=grid_points[2]-4; k++){				
 					forcing[k][j][i][m]=forcing[k][j][i][m]-dssp*
@@ -992,6 +1074,7 @@ void exact_rhs(){
 						 6.0*ue[m][k]-4.0*ue[m][k+1]+ue[m][k+2]);
 				}
 			}
+			#pragma unroll
 			for(m=0; m<5; m++){
 				k=grid_points[2]-3;
 				forcing[k][j][i][m]=forcing[k][j][i][m]-dssp*
@@ -1010,7 +1093,9 @@ void exact_rhs(){
 	 */
 	for(k=1; k<=grid_points[2]-2; k++){
 		for(j=1; j<=grid_points[1]-2; j++){
+			#pragma omp simd
 			for(i=1; i<=grid_points[0]-2; i++){
+				#pragma unroll
 				for(m=0; m<5; m++){
 					forcing[k][j][i][m]=-1.0*forcing[k][j][i][m];
 				}
@@ -1094,6 +1179,7 @@ void initialize(){
 					Pzeta=(double)iz;
 					exact_solution(xi, eta, Pzeta, &Pface[iz][2][0]);
 				}
+				#pragma unroll
 				for(m=0; m<5; m++){
 					Pxi=xi*Pface[1][0][m]+(1.0-xi)*Pface[0][0][m];
 					Peta=eta*Pface[1][1][m]+(1.0-eta)*Pface[0][1][m];
@@ -1119,6 +1205,7 @@ void initialize(){
 		for(j=0; j<=grid_points[1]-1; j++){
 			eta=(double)j*dnym1;
 			exact_solution(xi, eta, zeta, temp);
+			#pragma unroll
 			for(m=0; m<5; m++){
 				u[k][j][i][m]=temp[m];
 			}
@@ -1136,6 +1223,7 @@ void initialize(){
 		for(j=0; j<=grid_points[1]-1; j++){
 			eta=(double)j*dnym1;
 			exact_solution(xi, eta, zeta, temp);
+			#pragma unroll
 			for(m=0; m<5; m++){
 				u[k][j][i][m]=temp[m];
 			}
@@ -1153,6 +1241,7 @@ void initialize(){
 		for(i=0; i<=grid_points[0]-1; i++){
 			xi=(double)i*dnxm1;
 			exact_solution(xi, eta, zeta, temp);
+			#pragma unroll
 			for(m=0; m<5; m++){
 				u[k][j][i][m]=temp[m];
 			}
@@ -1170,6 +1259,7 @@ void initialize(){
 		for(i=0; i<=grid_points[0]-1; i++){
 			xi=(double)i*dnxm1;
 			exact_solution(xi, eta, zeta, temp);
+			#pragma unroll
 			for(m=0; m<5; m++){
 				u[k][j][i][m]=temp[m];
 			}
@@ -1187,6 +1277,7 @@ void initialize(){
 		for(i=0; i<=grid_points[0]-1; i++){
 			xi=(double)i*dnxm1;
 			exact_solution(xi, eta, zeta, temp);
+			#pragma unroll
 			for(m=0; m<5; m++){
 				u[k][j][i][m]=temp[m];
 			}
@@ -1204,6 +1295,7 @@ void initialize(){
 		for(i=0; i<=grid_points[0]-1; i++){
 			xi=(double)i*dnxm1;
 			exact_solution(xi, eta, zeta, temp);
+			#pragma unroll
 			for(m=0; m<5; m++){
 				u[k][j][i][m]=temp[m];
 			}
@@ -1220,6 +1312,7 @@ void lhsinit(int ni, int nj){
 	 * ---------------------------------------------------------------------
 	 */
 	for(j=1; j<=nj; j++){
+		#pragma unroll
 		for(m=0; m<5; m++){
 			lhs[j][0][m]=0.0;
 			lhsp[j][0][m]=0.0;
@@ -1246,6 +1339,7 @@ void lhsinitj(int nj, int ni){
 	 * ---------------------------------------------------------------------
 	 */
 	for(i=1; i<=ni; i++){
+		#pragma unroll
 		for(m=0; m<5; m++){
 			lhs[0][i][m]=0.0;
 			lhsp[0][i][m]=0.0;

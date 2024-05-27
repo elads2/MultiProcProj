@@ -4,3 +4,4 @@ cd ../NPB-CPP/
 make sp_improved CLASS=$class_type
 echo $HOSTNAME
 ./bin/sp.$class_type
+# vtune -collect performance-snapshot -collect hotspots ./bin/sp.$class_type

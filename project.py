@@ -1,3 +1,5 @@
+#! python3
+
 import os
 import subprocess
 from pathlib import Path
@@ -40,22 +42,33 @@ def get_results_path(script_name: str, timeout: float = 100) -> Path:
     raise Exception('Results file not found')
 
 
-def main():
-    run_type = RunType.RUN_CPU
-    class_type = 'S'
+def main(class_type):
+    run_type = RunType.RUN_CPU_IMPROVED
+    # class_type = 'S'
     times_to_run = 1
-    num_threads = 1
+    num_threads = 100
 
     total_run_duration = 0
+    
+    os.chdir('/home/u219333/')
+    os.chdir('dev')
+    os.chdir('Project')
+    os.chdir('MultiProcProj')
     os.chdir('runs')
     runs_pwd = os.getcwd()
     for run_index in range(times_to_run):
         run_benchmark(run_type.value, class_type, num_threads)
         os.chdir(runs_pwd)
-        total_run_duration += get_run_duration(get_results_path(run_type.value))
+        d = get_run_duration(get_results_path(run_type.value))
+        if d is not None:
+            total_run_duration += d
     average_run_duration = total_run_duration / times_to_run
     print(f"Average run duration {average_run_duration}s")
 
 
 if __name__ == '__main__':
-    main()
+    main('B')
+    
+    #for c in CLASS_TYPES:
+    #    print("running class %s\n\n\n\n" % c)
+    #    main(c)
