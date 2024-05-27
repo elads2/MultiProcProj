@@ -75,4 +75,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main('B')
+    
+    #for c in CLASS_TYPES:
+    #    print("running class %s\n\n\n\n" % c)
+    #    main(c)
