@@ -336,8 +336,7 @@ void add(){
 	int i, j, k, m;
 	int thread_id = omp_get_thread_num();
 	if(timeron && thread_id==0){timer_start(T_ADD);}
-	#pragma omp target teams num_teams(TEAMS_AMOUNT)
-	#pragma omp distribute parallel for
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -356,9 +355,15 @@ void adi(){
 	x_solve();
 	y_solve();
 	z_solve();
-	#pragma omp target enter data map(to:u[0:KMAX]) map(to:rhs[0:KMAX])
+	#pragma omp target enter data map(to:u[:KMAX]) map(to:rho_i[:KMAX])\
+		map(to:forcing[:KMAX]) map(to:us[:KMAX]) map(to:vs[:KMAX])\
+		map(to:ws[:KMAX]) map(to:qs[:KMAX]) map(to:square[:KMAX])\
+		map(to:speed[:KMAX]) map(to:rhs[:KMAX])
 	add();
-	#pragma omp target exit data map(from:u[0:KMAX]) map(delete:rhs[0:KMAX])
+	#pragma omp target exit data map(from:u[:KMAX]) map(from:rho_i[:KMAX])\
+		map(from:forcing[:KMAX]) map(from:us[:KMAX]) map(from:vs[:KMAX])\
+		map(from:ws[:KMAX])	map(from:qs[:KMAX]) map(from:square[:KMAX])\
+		map(from:speed[:KMAX]) map(from:rhs[:KMAX])
 }
 
 void compute_rhs(){
