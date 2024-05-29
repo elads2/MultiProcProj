@@ -385,6 +385,13 @@ void compute_rhs() {
 	 * and the speed of sound.
 	 * ---------------------------------------------------------------------
 	 */
+	#pragma omp target enter data map(to:u[:KMAX][:JMAX+1][:IMAXP+1][:5])\
+		map(to:us[:KMAX][:JMAX+1][:IMAXP+1]) map(to:vs[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(to:ws[:KMAX][:JMAX+1][:IMAXP+1]) map(to:qs[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(to:rho_i[:KMAX][:JMAX+1][:IMAXP+1]) map(to:speed[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(to:square[:KMAX][:JMAX+1][:IMAXP+1]) map(to:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])\
+		map(to:forcing[:KMAX][:JMAX+1][:IMAXP+1][:5])
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for (k = 0; k <= grid_points[2] - 1; k++) {
 		for (j = 0; j <= grid_points[1] - 1; j++) {
 			for (i = 0; i <= grid_points[0] - 1; i++) {
@@ -416,6 +423,7 @@ void compute_rhs() {
 	 * ---------------------------------------------------------------------
 	 */
 	 //TODO: not dependent on previous loop
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for (k = 0; k <= grid_points[2] - 1; k++) {
 		for (j = 0; j <= grid_points[1] - 1; j++) {
 			for (i = 0; i <= grid_points[0] - 1; i++) {
@@ -431,6 +439,7 @@ void compute_rhs() {
 	 * ---------------------------------------------------------------------
 	 */
 	if (timeron && thread_id == 0) { timer_start(T_RHSX); }
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for (k = 1; k <= nz2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
@@ -514,6 +523,7 @@ void compute_rhs() {
 	 * ---------------------------------------------------------------------
 	 */
 	if (timeron && thread_id == 0) { timer_start(T_RHSY); }
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for (k = 1; k <= nz2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
@@ -601,6 +611,7 @@ void compute_rhs() {
 	 * ---------------------------------------------------------------------
 	 */
 	if (timeron && thread_id == 0) { timer_start(T_RHSZ); }
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for (k = 1; k <= nz2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
@@ -642,6 +653,7 @@ void compute_rhs() {
 	 * ---------------------------------------------------------------------
 	 */
 	k = 1;
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for (j = 1; j <= ny2; j++) {
 		for (i = 1; i <= nx2; i++) {
 			for (m = 0; m < 5; m++) {
@@ -651,6 +663,7 @@ void compute_rhs() {
 		}
 	}
 	k = 2;
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for (j = 1; j <= ny2; j++) {
 		for (i = 1; i <= nx2; i++) {
 			for (m = 0; m < 5; m++) {
@@ -660,6 +673,7 @@ void compute_rhs() {
 			}
 		}
 	}
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for (k = 3; k <= nz2 - 2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
@@ -673,6 +687,7 @@ void compute_rhs() {
 		}
 	}
 	k = nz2 - 1;
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for (j = 1; j <= ny2; j++) {
 		for (i = 1; i <= nx2; i++) {
 			for (m = 0; m < 5; m++) {
@@ -683,6 +698,7 @@ void compute_rhs() {
 		}
 	}
 	k = nz2;
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for (j = 1; j <= ny2; j++) {
 		for (i = 1; i <= nx2; i++) {
 			for (m = 0; m < 5; m++) {
@@ -692,6 +708,7 @@ void compute_rhs() {
 		}
 	}
 	if (timeron && thread_id == 0) { timer_stop(T_RHSZ); }
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for (k = 1; k <= nz2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
@@ -701,6 +718,12 @@ void compute_rhs() {
 			}
 		}
 	}
+	#pragma omp target exit data map(from:u[:KMAX][:JMAX+1][:IMAXP+1][:5])\
+		map(from:us[:KMAX][:JMAX+1][:IMAXP+1]) map(from:vs[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(from:ws[:KMAX][:JMAX+1][:IMAXP+1]) map(from:qs[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(from:rho_i[:KMAX][:JMAX+1][:IMAXP+1]) map(from:speed[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(from:square[:KMAX][:JMAX+1][:IMAXP+1]) map(from:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])\
+		map(from:forcing[:KMAX][:JMAX+1][:IMAXP+1][:5])
 	if (timeron && thread_id == 0) { timer_stop(T_RHS); }
 }
 
