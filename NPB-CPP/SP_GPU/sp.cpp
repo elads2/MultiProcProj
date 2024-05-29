@@ -356,13 +356,13 @@ void add() {
 
 void adi() {
 	compute_rhs();
-	txinvr();
 	#pragma omp target enter data map(to:u[:KMAX][:JMAX+1][:IMAXP+1][:5])\
 		map(to:us[:KMAX][:JMAX+1][:IMAXP+1]) map(to:vs[:KMAX][:JMAX+1][:IMAXP+1])\
 		map(to:ws[:KMAX][:JMAX+1][:IMAXP+1]) map(to:qs[:KMAX][:JMAX+1][:IMAXP+1])\
 		map(to:rho_i[:KMAX][:JMAX+1][:IMAXP+1]) map(to:speed[:KMAX][:JMAX+1][:IMAXP+1])\
 		map(to:square[:KMAX][:JMAX+1][:IMAXP+1]) map(to:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])\
 		map(to:forcing[:KMAX][:JMAX+1][:IMAXP+1][:5])
+	txinvr();
 	x_solve();
 	y_solve();
 	z_solve();
@@ -1561,6 +1561,7 @@ void txinvr() {
 	int thread_id = omp_get_thread_num();
 
 	if (timeron && thread_id == 0) { timer_start(T_TXINVR); }
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for (k = 1; k <= nz2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
