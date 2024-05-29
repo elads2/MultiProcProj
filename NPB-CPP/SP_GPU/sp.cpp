@@ -336,12 +336,11 @@ void add(){
 	int i, j, k, m;
 	int thread_id = omp_get_thread_num();
 	if(timeron && thread_id==0){timer_start(T_ADD);}
-	#pragma omp target data map(tofrom:u[0:KMAX]) map(to:rhs[0:KMAX])
-	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
+	#pragma omp target teams num_teams(TEAMS_AMOUNT)
+	#pragma omp distribute parallel for
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
-                #pragma omp simd
 				for(m=0; m<5; m++){
 					u[k][j][i][m]=u[k][j][i][m]+rhs[k][j][i][m];
 				}
@@ -357,7 +356,9 @@ void adi(){
 	x_solve();
 	y_solve();
 	z_solve();
+	#pragma omp target enter data map(to:u[0:KMAX]) map(to:rhs[0:KMAX])
 	add();
+	#pragma omp target exit data map(from:u[0:KMAX]) map(delete:rhs[0:KMAX])
 }
 
 void compute_rhs(){
