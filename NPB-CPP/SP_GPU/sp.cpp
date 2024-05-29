@@ -106,8 +106,6 @@ static double lhsp[IMAXP+1][IMAXP+1][5];
 static double lhsm[IMAXP+1][IMAXP+1][5];
 static double ce[13][5];
 #else
-#define SQUARE_SIZE (KMAX)*(JMAXP+1)*(IMAXP+1)
-#define RHS_SIZE SQUARE_SIZE*5
 #define TEAMS_AMOUNT 56
 static double (*u)[JMAXP+1][IMAXP+1][5]=(double(*)[JMAXP+1][IMAXP+1][5])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)*(5)));
 static double (*us)[JMAXP+1][IMAXP+1]=(double(*)[JMAXP+1][IMAXP+1])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)));
@@ -351,19 +349,23 @@ void add(){
 
 void adi(){
 	compute_rhs();
-	#pragma omp target enter data map(to:u[:KMAX][:JMAX + 1][:IMAXP+1][:5]) map(to:rho_i[:KMAX])\
-		map(to:forcing[:KMAX]) map(to:us[:KMAX]) map(to:vs[:KMAX])\
-		map(to:ws[:KMAX]) map(to:qs[:KMAX]) map(to:square[:KMAX])\
-		map(to:speed[:KMAX]) map(to:rhs[:KMAX][:JMAX + 1][:IMAXP+1][:5])
+	#pragma omp target enter data map(to:u[:KMAX][:JMAX+1][:IMAXP+1][:5])\
+		map(to:us[:KMAX][:JMAX+1][:IMAXP+1]) map(to:vs[:KMAX][:JMAX + 1][:IMAXP+1])\
+		map(to:ws[:KMAX][:JMAX+1][:IMAXP+1]) map(to:qs[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(to:rho_i[:KMAX][:JMAX+1][:IMAXP+1]) map(to:speed[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(to:square[:KMAX][:JMAX+1][:IMAXP+1]) map(to:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])\
+		map(to:forcing[:KMAX][:JMAX+1][:IMAXP+1][:5])
 	txinvr();
 	x_solve();
 	y_solve();
 	z_solve();
 	add();
-	#pragma omp target exit data map(from:u[:KMAX][:JMAX + 1][:IMAXP+1][:5]) map(from:rho_i[:KMAX])\
-		map(from:forcing[:KMAX]) map(from:us[:KMAX]) map(from:vs[:KMAX])\
-		map(from:ws[:KMAX])	map(from:qs[:KMAX]) map(from:square[:KMAX])\
-		map(from:speed[:KMAX]) map(from:rhs[:KMAX][:JMAX + 1][:IMAXP+1][:5])
+	#pragma omp target exit data map(from:u[:KMAX][:JMAX+1][:IMAXP+1][:5])\
+		map(from:us[:KMAX][:JMAX+1][:IMAXP+1]) map(from:vs[:KMAX][:JMAX + 1][:IMAXP+1])\
+		map(from:ws[:KMAX][:JMAX+1][:IMAXP+1]) map(from:qs[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(from:rho_i[:KMAX][:JMAX+1][:IMAXP+1]) map(from:speed[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(from:square[:KMAX][:JMAX+1][:IMAXP+1]) map(from:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])\
+		map(from:forcing[:KMAX][:JMAX+1][:IMAXP+1][:5])
 }
 
 void compute_rhs(){
