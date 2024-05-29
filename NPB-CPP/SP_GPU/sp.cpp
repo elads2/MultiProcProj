@@ -357,13 +357,13 @@ void add() {
 void adi() {
 	compute_rhs();
 	txinvr();
-	x_solve();
 	#pragma omp target enter data map(to:u[:KMAX][:JMAX+1][:IMAXP+1][:5])\
 		map(to:us[:KMAX][:JMAX+1][:IMAXP+1]) map(to:vs[:KMAX][:JMAX+1][:IMAXP+1])\
 		map(to:ws[:KMAX][:JMAX+1][:IMAXP+1]) map(to:qs[:KMAX][:JMAX+1][:IMAXP+1])\
 		map(to:rho_i[:KMAX][:JMAX+1][:IMAXP+1]) map(to:speed[:KMAX][:JMAX+1][:IMAXP+1])\
 		map(to:square[:KMAX][:JMAX+1][:IMAXP+1]) map(to:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])\
 		map(to:forcing[:KMAX][:JMAX+1][:IMAXP+1][:5])
+	x_solve();
 	y_solve();
 	z_solve();
 	add();
@@ -1281,6 +1281,7 @@ void ninvr() {
 	int thread_id = omp_get_thread_num();
 
 	if (timeron && thread_id == 0) { timer_start(T_NINVR); }
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for (k = 1; k <= nz2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
@@ -1957,6 +1958,7 @@ void x_solve() {
 	int thread_id = omp_get_thread_num();
 
 	if (timeron && thread_id == 0) { timer_start(T_XSOLVE); }
+	#pragma omp target update from(rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])
 	for (k = 1; k <= nz2; k++) {
 		double cv[PROBLEM_SIZE], rhon[PROBLEM_SIZE];
 		double lhs[IMAXP + 1][IMAXP + 1][5];
@@ -2222,6 +2224,7 @@ void x_solve() {
 			}
 		}
 	}
+	#pragma omp target update to(rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])
 	if (timeron && thread_id == 0) { timer_stop(T_XSOLVE); }
 	/*
 	 * ---------------------------------------------------------------------
@@ -2245,6 +2248,7 @@ void y_solve() {
 	int thread_id = omp_get_thread_num();
 
 	if (timeron && thread_id == 0) { timer_start(T_YSOLVE); }
+	#pragma omp target update from(rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])
 	for (k = 1; k <= grid_points[2] - 2; k++) {
 		double cv[PROBLEM_SIZE], rhoq[PROBLEM_SIZE];
 		double lhs[IMAXP + 1][IMAXP + 1][5];
