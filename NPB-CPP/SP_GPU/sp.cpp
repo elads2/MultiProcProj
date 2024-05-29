@@ -358,14 +358,13 @@ void adi() {
 	compute_rhs();
 	txinvr();
 	x_solve();
-	y_solve();
 	#pragma omp target enter data map(to:u[:KMAX][:JMAX+1][:IMAXP+1][:5])\
 		map(to:us[:KMAX][:JMAX+1][:IMAXP+1]) map(to:vs[:KMAX][:JMAX + 1][:IMAXP+1])\
 		map(to:ws[:KMAX][:JMAX+1][:IMAXP+1]) map(to:qs[:KMAX][:JMAX+1][:IMAXP+1])\
 		map(to:rho_i[:KMAX][:JMAX+1][:IMAXP+1]) map(to:speed[:KMAX][:JMAX+1][:IMAXP+1])\
 		map(to:square[:KMAX][:JMAX+1][:IMAXP+1]) map(to:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])\
 		map(to:forcing[:KMAX][:JMAX+1][:IMAXP+1][:5])
-
+	y_solve();
 	z_solve();
 	add();
 	#pragma omp target exit data map(from:u[:KMAX][:JMAX+1][:IMAXP+1][:5])\
@@ -1314,6 +1313,7 @@ void pinvr() {
 	int thread_id = omp_get_thread_num();
 
 	if (timeron && thread_id == 0) { timer_start(T_PINVR); }
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for (k = 1; k <= nz2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
@@ -2508,6 +2508,7 @@ void y_solve() {
 		}
 	}
 	if (timeron && thread_id == 0) { timer_stop(T_YSOLVE); }
+	#pragma omp target update to(rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])
 	pinvr();
 }
 
@@ -2530,6 +2531,8 @@ void z_solve() {
 	double lhsp[IMAXP + 1][IMAXP + 1][5];
 	double lhsm[IMAXP + 1][IMAXP + 1][5];
 	//todo: parallel it on gpu
+	//#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
+	#pragma omp target update from(rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])
 	for (j = 1; j <= ny2; j++) {
 		for (i = 1; i <= nx2; i++) {
 			for (m = 0; m < 5; m++) {
