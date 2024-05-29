@@ -1,8 +1,8 @@
+#!/bin/python3
 import os
 import subprocess
 from pathlib import Path
 from enum import Enum
-import time
 
 RUN_TIME_STRING = 'Time in seconds'
 VERIFICATION_STRING = ' Verification    ='
