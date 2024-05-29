@@ -106,7 +106,7 @@ static double lhsp[IMAXP+1][IMAXP+1][5];
 static double lhsm[IMAXP+1][IMAXP+1][5];
 static double ce[13][5];
 #else
-#define SQUARE_SIZE sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1))
+#define SQUARE_SIZE (KMAX)*(JMAXP+1)*(IMAXP+1)
 #define RHS_SIZE SQUARE_SIZE*5
 #define TEAMS_AMOUNT 56
 static double (*u)[JMAXP+1][IMAXP+1][5]=(double(*)[JMAXP+1][IMAXP+1][5])malloc(sizeof(double)*((KMAX)*(JMAXP+1)*(IMAXP+1)*(5)));
@@ -246,21 +246,13 @@ int main(int argc, char* argv[]){
 	 * do one time step to touch all code, and reinitialize
 	 * ---------------------------------------------------------------------
 	 */
-	#pragma omp target enter data map(to:u[:RHS_SIZE]) map(alloc:rho_i[:SQUARE_SIZE])\
-		map(to:forcing[:RHS_SIZE]) map(alloc:us[:SQUARE_SIZE]) map(alloc:vs[:SQUARE_SIZE])\
-		map(alloc:ws[:SQUARE_SIZE]) map(alloc:qs[:SQUARE_SIZE]) map(alloc:square[:SQUARE_SIZE])\
-		map(alloc:speed[:SQUARE_SIZE]) map(alloc:rhs[:RHS_SIZE])
-	#pragma omp target teams num_teams(TEAMS_AMOUNT)
   	{
 		adi();
 	}
-	#pragma omp target update from(u[:RHS_SIZE])
 	initialize();
-	#pragma omp target update to(u[:RHS_SIZE])
 	for(i=1;i<=T_LAST;i++){timer_clear(i);}
 	timer_start(1);
-	//todo: maybe depend on previous traget enter data and no wait before
-	#pragma omp target teams num_teams(TEAMS_AMOUNT) firstprivate(niter) private(step) 
+	//todo: maybe depend on previous traget enter data and no wait before 
   	{
 		for(step=1;step<=niter;step++){
 			if((step%20)==0||step==1){
@@ -269,10 +261,6 @@ int main(int argc, char* argv[]){
 			adi();
 		}
 	}
-	#pragma omp target exit data map(from:u[:RHS_SIZE]) map(delete:rho_i[:SQUARE_SIZE]) map(delete:forcing[:RHS_SIZE])\
-		map(delete:us[:SQUARE_SIZE]) map(delete:vs[:SQUARE_SIZE]) map(delete:ws[:SQUARE_SIZE])\
-		map(delete:qs[:SQUARE_SIZE]) map(delete:square[:SQUARE_SIZE]) map(delete:speed[:SQUARE_SIZE])\
-		map(from:rhs[:RHS_SIZE])
 	timer_stop(1);
 	tmax=timer_read(1);
 	verify(niter, &class_npb, &verified);
@@ -347,12 +335,13 @@ int main(int argc, char* argv[]){
 void add(){
 	int i, j, k, m;
 	int thread_id = omp_get_thread_num();
-
 	if(timeron && thread_id==0){timer_start(T_ADD);}
-	#pragma omp distribute parallel for simd
+	#pragma omp target data map(tofrom:u[0:KMAX]) map(to:rhs[0:KMAX])
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
+                #pragma omp simd
 				for(m=0; m<5; m++){
 					u[k][j][i][m]=u[k][j][i][m]+rhs[k][j][i][m];
 				}
@@ -383,7 +372,6 @@ void compute_rhs(){
 	 * and the speed of sound. 
 	 * ---------------------------------------------------------------------
 	 */
-	#pragma omp distribute parallel for 
 	for(k=0; k<=grid_points[2]-1; k++){
 		for(j=0; j<=grid_points[1]-1; j++){
 			for(i=0; i<=grid_points[0]-1; i++){
@@ -415,7 +403,6 @@ void compute_rhs(){
 	 * ---------------------------------------------------------------------
 	 */
 	//TODO: not dependent on previous loop
-	#pragma omp distribute parallel for  simd
 	for(k=0; k<=grid_points[2]-1; k++){
 		for(j=0; j<=grid_points[1]-1; j++){
 			for(i=0; i<=grid_points[0]-1; i++){
@@ -431,7 +418,6 @@ void compute_rhs(){
 	 * ---------------------------------------------------------------------
 	 */
 	if(timeron && thread_id==0){timer_start(T_RHSX);}
-	#pragma omp distribute parallel for 
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -515,7 +501,6 @@ void compute_rhs(){
 	 * ---------------------------------------------------------------------
 	 */
 	if(timeron && thread_id==0){timer_start(T_RHSY);}
-	#pragma omp distribute parallel for 
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -603,7 +588,6 @@ void compute_rhs(){
 	 * ---------------------------------------------------------------------
 	 */
 	if(timeron && thread_id==0){timer_start(T_RHSZ);}
-	#pragma omp distribute parallel for 
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -645,7 +629,6 @@ void compute_rhs(){
 	 * ---------------------------------------------------------------------
 	 */
 	k=1;
-	#pragma omp distribute parallel for 
 	for(j=1; j<=ny2; j++){
 		for(i=1; i<=nx2; i++){
 			for(m=0; m<5; m++){
@@ -655,7 +638,6 @@ void compute_rhs(){
 		}
 	}
 	k=2;
-	#pragma omp distribute parallel for 
 	for(j=1; j<=ny2; j++){
 		for(i=1; i<=nx2; i++){
 			for(m=0; m<5; m++){
@@ -665,7 +647,6 @@ void compute_rhs(){
 			}
 		}
 	}
-	#pragma omp distribute parallel for 
 	for(k=3; k<=nz2-2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -679,7 +660,6 @@ void compute_rhs(){
 		}
 	}
 	k=nz2-1;
-	#pragma omp distribute parallel for 
 	for(j=1; j<=ny2; j++){
 		for(i=1; i<=nx2; i++){
 			for(m=0; m<5; m++){
@@ -690,7 +670,6 @@ void compute_rhs(){
 		}
 	}
 	k=nz2;
-	#pragma omp distribute parallel for 
 	for(j=1; j<=ny2; j++){
 		for(i=1; i<=nx2; i++){
 			for(m=0; m<5; m++){
@@ -700,7 +679,6 @@ void compute_rhs(){
 		}
 	}
 	if(timeron && thread_id==0){timer_stop(T_RHSZ);}
-	#pragma omp distribute parallel for  simd
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -1288,7 +1266,6 @@ void ninvr(){
 	int thread_id = omp_get_thread_num();
 
 	if(timeron && thread_id==0){timer_start(T_NINVR);}
-	#pragma omp distribute parallel for 
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -1321,7 +1298,6 @@ void pinvr(){
 	int thread_id = omp_get_thread_num();
 
 	if(timeron && thread_id==0){timer_start(T_PINVR);}
-	#pragma omp distribute parallel for 
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -1568,7 +1544,6 @@ void txinvr(){
 	int thread_id = omp_get_thread_num();
 
 	if(timeron && thread_id==0){timer_start(T_TXINVR);}
-	#pragma omp distribute parallel for 
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -1608,7 +1583,6 @@ void tzetar(){
 	int thread_id = omp_get_thread_num();
 
 	if(timeron && thread_id==0){timer_start(T_TZETAR);}
-	#pragma omp distribute parallel for 
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -1950,8 +1924,6 @@ void x_solve(){
 	int thread_id = omp_get_thread_num();
 
 	if(timeron && thread_id==0){timer_start(T_XSOLVE);}
-
-	#pragma omp distribute parallel for 
 	for(k=1; k<=nz2; k++){
 		double cv[PROBLEM_SIZE], rhon[PROBLEM_SIZE];
 		double lhs[IMAXP+1][IMAXP+1][5];
@@ -2239,8 +2211,7 @@ void y_solve(){
 	double ru1, fac1, fac2;
 	int thread_id = omp_get_thread_num();
 
-	if(timeron && thread_id==0){timer_start(T_YSOLVE);}
-	#pragma omp distribute parallel for 
+	if(timeron && thread_id==0){timer_start(T_YSOLVE);} 
 	for(k=1; k<=grid_points[2]-2; k++){
 		double cv[PROBLEM_SIZE], rhoq[PROBLEM_SIZE];
 		double lhs[IMAXP+1][IMAXP+1][5];
@@ -2521,7 +2492,6 @@ void z_solve(){
 	int thread_id = omp_get_thread_num();
 	
 	if(timeron && thread_id==0){timer_start(T_ZSOLVE);}
-	#pragma omp distribute parallel for 
 	for(j=1; j<=ny2; j++){
 		double cv[PROBLEM_SIZE], rhos[PROBLEM_SIZE];
 		double lhs[IMAXP+1][IMAXP+1][5];
