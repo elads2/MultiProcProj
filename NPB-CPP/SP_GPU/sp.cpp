@@ -354,16 +354,16 @@ void adi(){
 	txinvr();
 	x_solve();
 	y_solve();
-	z_solve();
-	#pragma omp target enter data map(to:u[:KMAX]) map(to:rho_i[:KMAX])\
+	#pragma omp target enter data map(to:u[:KMAX][:JMAX + 1][:IMAXP+1][:5]) map(to:rho_i[:KMAX])\
 		map(to:forcing[:KMAX]) map(to:us[:KMAX]) map(to:vs[:KMAX])\
 		map(to:ws[:KMAX]) map(to:qs[:KMAX]) map(to:square[:KMAX])\
-		map(to:speed[:KMAX]) map(to:rhs[:KMAX])
+		map(to:speed[:KMAX]) map(to:rhs[:KMAX][:JMAX + 1][:IMAXP+1][:5])
+	z_solve();
 	add();
-	#pragma omp target exit data map(from:u[:KMAX]) map(from:rho_i[:KMAX])\
+	#pragma omp target exit data map(from:u[:KMAX][:JMAX + 1][:IMAXP+1][:5]) map(from:rho_i[:KMAX])\
 		map(from:forcing[:KMAX]) map(from:us[:KMAX]) map(from:vs[:KMAX])\
 		map(from:ws[:KMAX])	map(from:qs[:KMAX]) map(from:square[:KMAX])\
-		map(from:speed[:KMAX]) map(from:rhs[:KMAX])
+		map(from:speed[:KMAX]) map(from:rhs[:KMAX][:JMAX + 1][:IMAXP+1][:5])
 }
 
 void compute_rhs(){
@@ -1589,6 +1589,7 @@ void tzetar(){
 	int thread_id = omp_get_thread_num();
 
 	if(timeron && thread_id==0){timer_start(T_TZETAR);}
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for(k=1; k<=nz2; k++){
 		for(j=1; j<=ny2; j++){
 			for(i=1; i<=nx2; i++){
@@ -2498,12 +2499,13 @@ void z_solve(){
 	int thread_id = omp_get_thread_num();
 	
 	if(timeron && thread_id==0){timer_start(T_ZSOLVE);}
+	double cv[PROBLEM_SIZE], rhos[PROBLEM_SIZE];
+	double lhs[IMAXP + 1][IMAXP + 1][5];
+	double lhsp[IMAXP + 1][IMAXP + 1][5];
+	double lhsm[IMAXP + 1][IMAXP + 1][5];
+	//todo: parallel it
+	#pragma omp target
 	for(j=1; j<=ny2; j++){
-		double cv[PROBLEM_SIZE], rhos[PROBLEM_SIZE];
-		double lhs[IMAXP+1][IMAXP+1][5];
-		double lhsp[IMAXP+1][IMAXP+1][5];
-		double lhsm[IMAXP+1][IMAXP+1][5];
-
 		for(i=1; i<=nx2; i++){
 			for(m=0; m<5; m++){
 				lhs[0][i][m]=0.0;
