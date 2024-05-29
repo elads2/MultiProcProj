@@ -391,7 +391,7 @@ void compute_rhs() {
 		map(to:rho_i[:KMAX][:JMAX+1][:IMAXP+1]) map(to:speed[:KMAX][:JMAX+1][:IMAXP+1])\
 		map(to:square[:KMAX][:JMAX+1][:IMAXP+1]) map(to:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])\
 		map(to:forcing[:KMAX][:JMAX+1][:IMAXP+1][:5])
-	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
+	#pragma omp target teams distribute parallel for nowait num_teams(TEAMS_AMOUNT)
 	for (k = 0; k <= grid_points[2] - 1; k++) {
 		for (j = 0; j <= grid_points[1] - 1; j++) {
 			for (i = 0; i <= grid_points[0] - 1; i++) {
@@ -422,7 +422,6 @@ void compute_rhs() {
 	 * including the boundary
 	 * ---------------------------------------------------------------------
 	 */
-	 //TODO: not dependent on previous loop
 	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for (k = 0; k <= grid_points[2] - 1; k++) {
 		for (j = 0; j <= grid_points[1] - 1; j++) {
