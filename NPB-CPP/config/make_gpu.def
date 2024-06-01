@@ -27,7 +27,7 @@
 #---------------------------------------------------------------------------
 # This is the C compiler used for OpenMP programs
 #---------------------------------------------------------------------------
-CC = icpx -qopenmp -fopenmp-targets=spir64 -std=c++14
+CC = icpx -O3 -qopenmp -fopenmp-targets=spir64 -std=c++14
 
 
 # This links C programs; usually the same as ${CC}
@@ -56,7 +56,7 @@ CFLAGS	= -O3 -qopenmp -mcmodel=medium
 # Global *link time* flags. Flags for increasing maximum executable
 # size usually go here.
 #---------------------------------------------------------------------------
-CLINKFLAGS = -O2 -qopenmp -mcmodel=medium
+CLINKFLAGS = -O3 -qopenmp -mcmodel=medium
 
 
 #---------------------------------------------------------------------------
