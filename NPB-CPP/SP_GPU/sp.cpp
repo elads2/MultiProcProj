@@ -106,9 +106,7 @@ static double lhsp[IMAXP + 1][IMAXP + 1][5];
 static double lhsm[IMAXP + 1][IMAXP + 1][5];
 static double ce[13][5];
 #else
-#define SQUARE_SIZE (KMAX)*(JMAXP+1)*(IMAXP+1)
-#define RHS_SIZE SQUARE_SIZE*5
-#define TEAMS_AMOUNT 56
+#define TEAMS_AMOUNT 112
 static double(*u)[JMAXP + 1][IMAXP + 1][5] = (double(*)[JMAXP + 1][IMAXP + 1][5])malloc(sizeof(double) * ((KMAX) * (JMAXP + 1) * (IMAXP + 1) * (5)));
 static double(*us)[JMAXP + 1][IMAXP + 1] = (double(*)[JMAXP + 1][IMAXP + 1])malloc(sizeof(double) * ((KMAX) * (JMAXP + 1) * (IMAXP + 1)));
 static double(*vs)[JMAXP + 1][IMAXP + 1] = (double(*)[JMAXP + 1][IMAXP + 1])malloc(sizeof(double) * ((KMAX) * (JMAXP + 1) * (IMAXP + 1)));
