@@ -356,13 +356,16 @@ void add() {
 }
 
 void adi() {
-	compute_rhs();
 	#pragma omp target enter data map(to:u[:KMAX][:JMAX+1][:IMAXP+1][:5])\
 		map(to:us[:KMAX][:JMAX+1][:IMAXP+1]) map(to:vs[:KMAX][:JMAX+1][:IMAXP+1])\
 		map(to:ws[:KMAX][:JMAX+1][:IMAXP+1]) map(to:qs[:KMAX][:JMAX+1][:IMAXP+1])\
 		map(to:rho_i[:KMAX][:JMAX+1][:IMAXP+1]) map(to:speed[:KMAX][:JMAX+1][:IMAXP+1])\
-		map(to:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])
+		map(to:square[:KMAX][:JMAX+1][:IMAXP+1]) map(to:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])\
+		map(to:forcing[:KMAX][:JMAX+1][:IMAXP+1][:5])
+	compute_rhs();
+	#pragma omp target exit data map(release:square[:KMAX][:JMAX+1][:IMAXP+1]) map(release:forcing[:KMAX][:JMAX+1][:IMAXP+1][:5])
 	txinvr();
+	#pragma omp target update from(speed[:KMAX][:JMAX+1][:IMAXP+1]) from(rho_i[:KMAX][:JMAX+1][:IMAXP+1])
 	x_solve();
 	y_solve();
 	z_solve();
@@ -386,12 +389,6 @@ void compute_rhs() {
 	 * and the speed of sound.
 	 * ---------------------------------------------------------------------
 	 */
-	#pragma omp target enter data map(to:u[:KMAX][:JMAX+1][:IMAXP+1][:5])\
-		map(to:us[:KMAX][:JMAX+1][:IMAXP+1]) map(to:vs[:KMAX][:JMAX+1][:IMAXP+1])\
-		map(to:ws[:KMAX][:JMAX+1][:IMAXP+1]) map(to:qs[:KMAX][:JMAX+1][:IMAXP+1])\
-		map(to:rho_i[:KMAX][:JMAX+1][:IMAXP+1]) map(to:speed[:KMAX][:JMAX+1][:IMAXP+1])\
-		map(to:square[:KMAX][:JMAX+1][:IMAXP+1]) map(to:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])\
-		map(to:forcing[:KMAX][:JMAX+1][:IMAXP+1][:5])
 	#pragma omp target teams distribute parallel for nowait num_teams(TEAMS_AMOUNT)
 	for (k = 0; k <= grid_points[2] - 1; k++) {
 		for (j = 0; j <= grid_points[1] - 1; j++) {
@@ -718,12 +715,6 @@ void compute_rhs() {
 			}
 		}
 	}
-	#pragma omp target exit data map(from:u[:KMAX][:JMAX+1][:IMAXP+1][:5])\
-		map(from:us[:KMAX][:JMAX+1][:IMAXP+1]) map(from:vs[:KMAX][:JMAX+1][:IMAXP+1])\
-		map(from:ws[:KMAX][:JMAX+1][:IMAXP+1]) map(from:qs[:KMAX][:JMAX+1][:IMAXP+1])\
-		map(from:rho_i[:KMAX][:JMAX+1][:IMAXP+1]) map(from:speed[:KMAX][:JMAX+1][:IMAXP+1])\
-		map(from:square[:KMAX][:JMAX+1][:IMAXP+1]) map(from:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])\
-		map(from:forcing[:KMAX][:JMAX+1][:IMAXP+1][:5])
 	if (timeron && thread_id == 0) { timer_stop(T_RHS); }
 }
 
@@ -1980,7 +1971,7 @@ void x_solve() {
 	int thread_id = omp_get_thread_num();
 
 	if (timeron && thread_id == 0) { timer_start(T_XSOLVE); }
-	#pragma omp target update from(rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])
+	#pragma omp target update from(rhs[:KMAX][:JMAX+1][:IMAXP+1][:5]) from(us[:KMAX][:JMAX+1][:IMAXP+1])
 	for (k = 1; k <= nz2; k++) {
 		double cv[PROBLEM_SIZE], rhon[PROBLEM_SIZE];
 		double lhs[IMAXP + 1][IMAXP + 1][5];
@@ -2270,7 +2261,7 @@ void y_solve() {
 	int thread_id = omp_get_thread_num();
 
 	if (timeron && thread_id == 0) { timer_start(T_YSOLVE); }
-	#pragma omp target update from(rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])
+	#pragma omp target update from(rhs[:KMAX][:JMAX+1][:IMAXP+1][:5]) from(vs[:KMAX][:JMAX+1][:IMAXP+1])
 	for (k = 1; k <= grid_points[2] - 2; k++) {
 		double cv[PROBLEM_SIZE], rhoq[PROBLEM_SIZE];
 		double lhs[IMAXP + 1][IMAXP + 1][5];
@@ -2558,7 +2549,7 @@ void z_solve() {
 	double lhsm[IMAXP + 1][IMAXP + 1][5];
 	//todo: parallel it on gpu
 	//#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
-	#pragma omp target update from(rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])
+	#pragma omp target update from(rhs[:KMAX][:JMAX+1][:IMAXP+1][:5]) from(ws[:KMAX][:JMAX+1][:IMAXP+1])
 	for (j = 1; j <= ny2; j++) {
 		for (i = 1; i <= nx2; i++) {
 			for (m = 0; m < 5; m++) {
