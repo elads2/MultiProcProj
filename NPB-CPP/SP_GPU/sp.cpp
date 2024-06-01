@@ -106,7 +106,7 @@ static double lhsp[IMAXP + 1][IMAXP + 1][5];
 static double lhsm[IMAXP + 1][IMAXP + 1][5];
 static double ce[13][5];
 #else
-#define TEAMS_AMOUNT 112
+#define TEAMS_AMOUNT 448
 static double(*u)[JMAXP + 1][IMAXP + 1][5] = (double(*)[JMAXP + 1][IMAXP + 1][5])malloc(sizeof(double) * ((KMAX) * (JMAXP + 1) * (IMAXP + 1) * (5)));
 static double(*us)[JMAXP + 1][IMAXP + 1] = (double(*)[JMAXP + 1][IMAXP + 1])malloc(sizeof(double) * ((KMAX) * (JMAXP + 1) * (IMAXP + 1)));
 static double(*vs)[JMAXP + 1][IMAXP + 1] = (double(*)[JMAXP + 1][IMAXP + 1])malloc(sizeof(double) * ((KMAX) * (JMAXP + 1) * (IMAXP + 1)));
@@ -386,7 +386,7 @@ void compute_rhs() {
 	 * and the speed of sound.
 	 * ---------------------------------------------------------------------
 	 */
-	#pragma omp target teams distribute parallel for nowait num_teams(TEAMS_AMOUNT)
+	#pragma omp target teams distribute parallel for nowait num_teams(TEAMS_AMOUNT) collapse(3)
 	for (k = 0; k <= grid_points[2] - 1; k++) {
 		for (j = 0; j <= grid_points[1] - 1; j++) {
 			for (i = 0; i <= grid_points[0] - 1; i++) {
@@ -417,7 +417,7 @@ void compute_rhs() {
 	 * including the boundary
 	 * ---------------------------------------------------------------------
 	 */
-	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT) collapse(3)
 	for (k = 0; k <= grid_points[2] - 1; k++) {
 		for (j = 0; j <= grid_points[1] - 1; j++) {
 			for (i = 0; i <= grid_points[0] - 1; i++) {
@@ -606,7 +606,7 @@ void compute_rhs() {
 	 * ---------------------------------------------------------------------
 	 */
 	if (timeron && thread_id == 0) { timer_start(T_RHSZ); }
-	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT) collapse(3)
 	for (k = 1; k <= nz2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
@@ -648,7 +648,7 @@ void compute_rhs() {
 	 * ---------------------------------------------------------------------
 	 */
 	k = 1;
-	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT) collapse(3)
 	for (j = 1; j <= ny2; j++) {
 		for (i = 1; i <= nx2; i++) {
 			for (m = 0; m < 5; m++) {
@@ -658,7 +658,7 @@ void compute_rhs() {
 		}
 	}
 	k = 2;
-	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT) collapse(3)
 	for (j = 1; j <= ny2; j++) {
 		for (i = 1; i <= nx2; i++) {
 			for (m = 0; m < 5; m++) {
@@ -668,7 +668,7 @@ void compute_rhs() {
 			}
 		}
 	}
-	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT) collapse(4)
 	for (k = 3; k <= nz2 - 2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
@@ -682,7 +682,7 @@ void compute_rhs() {
 		}
 	}
 	k = nz2 - 1;
-	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT) collapse(3)
 	for (j = 1; j <= ny2; j++) {
 		for (i = 1; i <= nx2; i++) {
 			for (m = 0; m < 5; m++) {
@@ -693,7 +693,7 @@ void compute_rhs() {
 		}
 	}
 	k = nz2;
-	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT) collapse(3)
 	for (j = 1; j <= ny2; j++) {
 		for (i = 1; i <= nx2; i++) {
 			for (m = 0; m < 5; m++) {
@@ -703,7 +703,7 @@ void compute_rhs() {
 		}
 	}
 	if (timeron && thread_id == 0) { timer_stop(T_RHSZ); }
-	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT) collapse(3)
 	for (k = 1; k <= nz2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
@@ -1292,7 +1292,7 @@ void ninvr() {
 	int thread_id = omp_get_thread_num();
 
 	if (timeron && thread_id == 0) { timer_start(T_NINVR); }
-	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT) collapse(3)
 	for (k = 1; k <= nz2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
@@ -1325,7 +1325,7 @@ void pinvr() {
 	int thread_id = omp_get_thread_num();
 
 	if (timeron && thread_id == 0) { timer_start(T_PINVR); }
-	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT) collapse(3)
 	for (k = 1; k <= nz2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
@@ -1572,7 +1572,7 @@ void txinvr() {
 	int thread_id = omp_get_thread_num();
 
 	if (timeron && thread_id == 0) { timer_start(T_TXINVR); }
-	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT) collapse(3)
 	for (k = 1; k <= nz2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
@@ -1612,7 +1612,7 @@ void tzetar() {
 	int thread_id = omp_get_thread_num();
 
 	if (timeron && thread_id == 0) { timer_start(T_TZETAR); }
-#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT) collapse(3)
 	for (k = 1; k <= nz2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
