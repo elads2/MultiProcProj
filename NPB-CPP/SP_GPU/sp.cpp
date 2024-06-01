@@ -421,6 +421,7 @@ void compute_rhs() {
 	for (k = 0; k <= grid_points[2] - 1; k++) {
 		for (j = 0; j <= grid_points[1] - 1; j++) {
 			for (i = 0; i <= grid_points[0] - 1; i++) {
+				#pragma omp simd
 				for (m = 0; m < 5; m++) {
 					rhs[k][j][i][m] = forcing[k][j][i][m];
 				}
@@ -706,6 +707,7 @@ void compute_rhs() {
 	for (k = 1; k <= nz2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
+				#pragma omp simd
 				for (m = 0; m < 5; m++) {
 					rhs[k][j][i][m] = rhs[k][j][i][m] * dt;
 				}
