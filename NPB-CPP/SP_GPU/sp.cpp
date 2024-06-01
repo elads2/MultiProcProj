@@ -249,13 +249,29 @@ int main(int argc, char* argv[]) {
 	 * do one time step to touch all code, and reinitialize
 	 * ---------------------------------------------------------------------
 	 */
-	{
-		adi();
-	}
+	#pragma omp target enter data map(to:u[:KMAX][:JMAX+1][:IMAXP+1][:5])\
+		map(to:us[:KMAX][:JMAX+1][:IMAXP+1]) map(to:vs[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(to:ws[:KMAX][:JMAX+1][:IMAXP+1]) map(to:qs[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(to:rho_i[:KMAX][:JMAX+1][:IMAXP+1]) map(to:speed[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(to:square[:KMAX][:JMAX+1][:IMAXP+1]) map(to:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])\
+		map(to:forcing[:KMAX][:JMAX+1][:IMAXP+1][:5])
+	adi();
+	#pragma omp target exit data map(from:u[:KMAX][:JMAX+1][:IMAXP+1][:5])\
+		map(from:us[:KMAX][:JMAX+1][:IMAXP+1]) map(from:vs[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(from:ws[:KMAX][:JMAX+1][:IMAXP+1]) map(from:qs[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(from:rho_i[:KMAX][:JMAX+1][:IMAXP+1]) map(from:speed[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(from:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5]) map(release:square[:KMAX][:JMAX + 1][:IMAXP + 1])\
+		map(release:forcing[:KMAX][:JMAX + 1][:IMAXP + 1][:5])
 	initialize();
 	for (i = 1; i <= T_LAST; i++) { timer_clear(i); }
 	timer_start(1);
 	//todo: maybe depend on previous traget enter data and no wait before 
+	#pragma omp target enter data map(to:u[:KMAX][:JMAX+1][:IMAXP+1][:5])\
+		map(to:us[:KMAX][:JMAX+1][:IMAXP+1]) map(to:vs[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(to:ws[:KMAX][:JMAX+1][:IMAXP+1]) map(to:qs[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(to:rho_i[:KMAX][:JMAX+1][:IMAXP+1]) map(to:speed[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(to:square[:KMAX][:JMAX+1][:IMAXP+1]) map(to:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])\
+		map(to:forcing[:KMAX][:JMAX+1][:IMAXP+1][:5])
 	{
 		for (step = 1; step <= niter; step++) {
 			if ((step % 20) == 0 || step == 1) {
@@ -264,6 +280,12 @@ int main(int argc, char* argv[]) {
 			adi();
 		}
 	}
+	#pragma omp target exit data map(from:u[:KMAX][:JMAX+1][:IMAXP+1][:5])\
+		map(from:us[:KMAX][:JMAX+1][:IMAXP+1]) map(from:vs[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(from:ws[:KMAX][:JMAX+1][:IMAXP+1]) map(from:qs[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(from:rho_i[:KMAX][:JMAX+1][:IMAXP+1]) map(from:speed[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(from:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5]) map(release:square[:KMAX][:JMAX + 1][:IMAXP + 1])\
+		map(release:forcing[:KMAX][:JMAX + 1][:IMAXP + 1][:5])
 	timer_stop(1);
 	tmax = timer_read(1);
 	verify(niter, &class_npb, &verified);
@@ -356,25 +378,13 @@ void add() {
 }
 
 void adi() {
-	#pragma omp target enter data map(to:u[:KMAX][:JMAX+1][:IMAXP+1][:5])\
-		map(to:us[:KMAX][:JMAX+1][:IMAXP+1]) map(to:vs[:KMAX][:JMAX+1][:IMAXP+1])\
-		map(to:ws[:KMAX][:JMAX+1][:IMAXP+1]) map(to:qs[:KMAX][:JMAX+1][:IMAXP+1])\
-		map(to:rho_i[:KMAX][:JMAX+1][:IMAXP+1]) map(to:speed[:KMAX][:JMAX+1][:IMAXP+1])\
-		map(to:square[:KMAX][:JMAX+1][:IMAXP+1]) map(to:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])\
-		map(to:forcing[:KMAX][:JMAX+1][:IMAXP+1][:5])
 	compute_rhs();
-	#pragma omp target exit data map(release:square[:KMAX][:JMAX+1][:IMAXP+1]) map(release:forcing[:KMAX][:JMAX+1][:IMAXP+1][:5])
 	txinvr();
 	#pragma omp target update from(speed[:KMAX][:JMAX+1][:IMAXP+1]) from(rho_i[:KMAX][:JMAX+1][:IMAXP+1])
 	x_solve();
 	y_solve();
 	z_solve();
 	add();
-	#pragma omp target exit data map(from:u[:KMAX][:JMAX+1][:IMAXP+1][:5])\
-		map(from:us[:KMAX][:JMAX+1][:IMAXP+1]) map(from:vs[:KMAX][:JMAX+1][:IMAXP+1])\
-		map(from:ws[:KMAX][:JMAX+1][:IMAXP+1]) map(from:qs[:KMAX][:JMAX+1][:IMAXP+1])\
-		map(from:rho_i[:KMAX][:JMAX+1][:IMAXP+1]) map(from:speed[:KMAX][:JMAX+1][:IMAXP+1])\
-		map(from:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])
 }
 
 void compute_rhs() {
