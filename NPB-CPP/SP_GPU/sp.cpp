@@ -387,7 +387,8 @@ void compute_rhs() {
 	 * and the speed of sound.
 	 * ---------------------------------------------------------------------
 	 */
-	#pragma omp target teams distribute parallel for nowait num_teams(TEAMS_AMOUNT) collapse(3)
+	// no wait caused race in 'S' size
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT) collapse(3)
 	for (k = 0; k <= grid_points[2] - 1; k++) {
 		for (j = 0; j <= grid_points[1] - 1; j++) {
 			for (i = 0; i <= grid_points[0] - 1; i++) {
