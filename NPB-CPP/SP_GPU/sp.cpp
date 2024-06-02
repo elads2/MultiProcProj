@@ -248,10 +248,10 @@ int main(int argc, char* argv[]) {
 	 * ---------------------------------------------------------------------
 	 */
 	#pragma omp target enter data map(to:u[:KMAX][:JMAX+1][:IMAXP+1][:5])\
-		map(to:us[:KMAX][:JMAX+1][:IMAXP+1]) map(to:vs[:KMAX][:JMAX+1][:IMAXP+1])\
-		map(to:ws[:KMAX][:JMAX+1][:IMAXP+1]) map(to:qs[:KMAX][:JMAX+1][:IMAXP+1])\
-		map(to:rho_i[:KMAX][:JMAX+1][:IMAXP+1]) map(to:speed[:KMAX][:JMAX+1][:IMAXP+1])\
-		map(to:square[:KMAX][:JMAX+1][:IMAXP+1]) map(to:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])\
+		map(alloc:us[:KMAX][:JMAX+1][:IMAXP+1]) map(alloc:vs[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(alloc:ws[:KMAX][:JMAX+1][:IMAXP+1]) map(alloc:qs[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(alloc:rho_i[:KMAX][:JMAX+1][:IMAXP+1]) map(alloc:speed[:KMAX][:JMAX+1][:IMAXP+1])\
+		map(alloc:square[:KMAX][:JMAX+1][:IMAXP+1]) map(alloc:rhs[:KMAX][:JMAX+1][:IMAXP+1][:5])\
 		map(to:forcing[:KMAX][:JMAX+1][:IMAXP+1][:5])
 	adi();
 	initialize();
@@ -387,8 +387,8 @@ void compute_rhs() {
 	 * and the speed of sound.
 	 * ---------------------------------------------------------------------
 	 */
-	// no wait caused race in 'S' size
-	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT) collapse(3)
+	// nowait caused race in 'S' size
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT) collapse(3) private(i, j, k)
 	for (k = 0; k <= grid_points[2] - 1; k++) {
 		for (j = 0; j <= grid_points[1] - 1; j++) {
 			for (i = 0; i <= grid_points[0] - 1; i++) {
