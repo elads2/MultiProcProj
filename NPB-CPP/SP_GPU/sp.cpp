@@ -418,7 +418,7 @@ void compute_rhs() {
 	 * including the boundary
 	 * ---------------------------------------------------------------------
 	 */
-	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT) collapse(3)
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for (k = 0; k <= grid_points[2] - 1; k++) {
 		for (j = 0; j <= grid_points[1] - 1; j++) {
 			for (i = 0; i <= grid_points[0] - 1; i++) {
@@ -704,7 +704,7 @@ void compute_rhs() {
 		}
 	}
 	if (timeron && thread_id == 0) { timer_stop(T_RHSZ); }
-	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT) collapse(3)
+	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	for (k = 1; k <= nz2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
