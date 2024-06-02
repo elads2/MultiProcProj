@@ -435,8 +435,9 @@ void compute_rhs() {
 	 * ---------------------------------------------------------------------
 	 */
 	if (timeron && thread_id == 0) { timer_start(T_RHSX); }
-	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
+	#pragma omp target teams distribute num_teams(TEAMS_AMOUNT)
 	for (k = 1; k <= nz2; k++) {
+		#pragma omp parallel for
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
 				uijk = us[k][j][i];
@@ -475,6 +476,7 @@ void compute_rhs() {
 		 * add fourth order xi-direction dissipation
 		 * ---------------------------------------------------------------------
 		 */
+		#pragma omp parallel for
 		for (j = 1; j <= ny2; j++) {
 			i = 1;
 			for (m = 0; m < 5; m++) {
@@ -488,6 +490,7 @@ void compute_rhs() {
 						4.0 * u[k][j][i + 1][m] + u[k][j][i + 2][m]);
 			}
 		}
+		#pragma omp parallel for
 		for (j = 1; j <= ny2; j++) {
 			for (i = 3; i <= nx2 - 2; i++) {
 				for (m = 0; m < 5; m++) {
@@ -498,6 +501,7 @@ void compute_rhs() {
 				}
 			}
 		}
+		#pragma omp parallel for
 		for (j = 1; j <= ny2; j++) {
 			i = nx2 - 1;
 			for (m = 0; m < 5; m++) {
@@ -519,8 +523,9 @@ void compute_rhs() {
 	 * ---------------------------------------------------------------------
 	 */
 	if (timeron && thread_id == 0) { timer_start(T_RHSY); }
-	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
+	#pragma omp target teams distribute num_teams(TEAMS_AMOUNT)
 	for (k = 1; k <= nz2; k++) {
+		#pragma omp parallel for
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
 				vijk = vs[k][j][i];
@@ -560,6 +565,7 @@ void compute_rhs() {
 		 * ---------------------------------------------------------------------
 		 */
 		j = 1;
+		#pragma omp parallel for
 		for (i = 1; i <= nx2; i++) {
 			for (m = 0; m < 5; m++) {
 				rhs[k][j][i][m] = rhs[k][j][i][m] - dssp *
@@ -567,6 +573,7 @@ void compute_rhs() {
 			}
 		}
 		j = 2;
+		#pragma omp parallel for
 		for (i = 1; i <= nx2; i++) {
 			for (m = 0; m < 5; m++) {
 				rhs[k][j][i][m] = rhs[k][j][i][m] - dssp *
@@ -574,6 +581,7 @@ void compute_rhs() {
 						4.0 * u[k][j + 1][i][m] + u[k][j + 2][i][m]);
 			}
 		}
+		#pragma omp parallel for
 		for (j = 3; j <= ny2 - 2; j++) {
 			for (i = 1; i <= nx2; i++) {
 				for (m = 0; m < 5; m++) {
@@ -585,6 +593,7 @@ void compute_rhs() {
 			}
 		}
 		j = ny2 - 1;
+		#pragma omp parallel for
 		for (i = 1; i <= nx2; i++) {
 			for (m = 0; m < 5; m++) {
 				rhs[k][j][i][m] = rhs[k][j][i][m] - dssp *
@@ -593,6 +602,7 @@ void compute_rhs() {
 			}
 		}
 		j = ny2;
+		#pragma omp parallel for
 		for (i = 1; i <= nx2; i++) {
 			for (m = 0; m < 5; m++) {
 				rhs[k][j][i][m] = rhs[k][j][i][m] - dssp *
