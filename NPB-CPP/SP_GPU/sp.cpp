@@ -2840,7 +2840,6 @@ void compute_rhs_verify() {
 	 * and the speed of sound.
 	 * ---------------------------------------------------------------------
 	 */
-#pragma omp for
 	for (k = 0; k <= grid_points[2] - 1; k++) {
 		for (j = 0; j <= grid_points[1] - 1; j++) {
 			for (i = 0; i <= grid_points[0] - 1; i++) {
@@ -2871,7 +2870,6 @@ void compute_rhs_verify() {
 	 * including the boundary
 	 * ---------------------------------------------------------------------
 	 */
-#pragma omp for
 	for (k = 0; k <= grid_points[2] - 1; k++) {
 		for (j = 0; j <= grid_points[1] - 1; j++) {
 			for (i = 0; i <= grid_points[0] - 1; i++) {
@@ -2887,7 +2885,6 @@ void compute_rhs_verify() {
 	 * ---------------------------------------------------------------------
 	 */
 	if (timeron && thread_id == 0) { timer_start(T_RHSX); }
-#pragma omp for
 	for (k = 1; k <= nz2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
@@ -2971,7 +2968,6 @@ void compute_rhs_verify() {
 	 * ---------------------------------------------------------------------
 	 */
 	if (timeron && thread_id == 0) { timer_start(T_RHSY); }
-#pragma omp for
 	for (k = 1; k <= nz2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
@@ -3059,7 +3055,6 @@ void compute_rhs_verify() {
 	 * ---------------------------------------------------------------------
 	 */
 	if (timeron && thread_id == 0) { timer_start(T_RHSZ); }
-#pragma omp for
 	for (k = 1; k <= nz2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
@@ -3101,7 +3096,6 @@ void compute_rhs_verify() {
 	 * ---------------------------------------------------------------------
 	 */
 	k = 1;
-#pragma omp for
 	for (j = 1; j <= ny2; j++) {
 		for (i = 1; i <= nx2; i++) {
 			for (m = 0; m < 5; m++) {
@@ -3111,7 +3105,6 @@ void compute_rhs_verify() {
 		}
 	}
 	k = 2;
-#pragma omp for
 	for (j = 1; j <= ny2; j++) {
 		for (i = 1; i <= nx2; i++) {
 			for (m = 0; m < 5; m++) {
@@ -3121,7 +3114,6 @@ void compute_rhs_verify() {
 			}
 		}
 	}
-#pragma omp for
 	for (k = 3; k <= nz2 - 2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
@@ -3135,7 +3127,6 @@ void compute_rhs_verify() {
 		}
 	}
 	k = nz2 - 1;
-#pragma omp for
 	for (j = 1; j <= ny2; j++) {
 		for (i = 1; i <= nx2; i++) {
 			for (m = 0; m < 5; m++) {
@@ -3146,7 +3137,6 @@ void compute_rhs_verify() {
 		}
 	}
 	k = nz2;
-#pragma omp for
 	for (j = 1; j <= ny2; j++) {
 		for (i = 1; i <= nx2; i++) {
 			for (m = 0; m < 5; m++) {
@@ -3156,7 +3146,6 @@ void compute_rhs_verify() {
 		}
 	}
 	if (timeron && thread_id == 0) { timer_stop(T_RHSZ); }
-#pragma omp for
 	for (k = 1; k <= nz2; k++) {
 		for (j = 1; j <= ny2; j++) {
 			for (i = 1; i <= nx2; i++) {
