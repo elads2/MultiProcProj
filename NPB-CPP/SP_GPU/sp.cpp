@@ -2543,14 +2543,14 @@ void z_solve() {
 	int thread_id = omp_get_thread_num();
 
 	if (timeron && thread_id == 0) { timer_start(T_ZSOLVE); }
-	double cv[PROBLEM_SIZE], rhos[PROBLEM_SIZE];
-	double lhs[IMAXP + 1][IMAXP + 1][5];
-	double lhsp[IMAXP + 1][IMAXP + 1][5];
-	double lhsm[IMAXP + 1][IMAXP + 1][5];
 	//todo: parallel it on gpu
 	//#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	#pragma omp target update from(rhs[:KMAX][:JMAX+1][:IMAXP+1][:5]) from(ws[:KMAX][:JMAX+1][:IMAXP+1])
 	for (j = 1; j <= ny2; j++) {
+		double cv[PROBLEM_SIZE], rhos[PROBLEM_SIZE];
+		double lhs[IMAXP + 1][IMAXP + 1][5];
+		double lhsp[IMAXP + 1][IMAXP + 1][5];
+		double lhsm[IMAXP + 1][IMAXP + 1][5];
 		for (i = 1; i <= nx2; i++) {
 			for (m = 0; m < 5; m++) {
 				lhs[0][i][m] = 0.0;
