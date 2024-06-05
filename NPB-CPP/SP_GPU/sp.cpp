@@ -171,9 +171,9 @@ void z_solve();
 
 /* sp */
 int main(int argc, char* argv[]) {
-#if defined(DO_NOT_ALLOCATE_ARRAYS_WITH_DYNAMIC_MEMORY_AND_AS_SINGLE_DIMENSION)
+	#if defined(DO_NOT_ALLOCATE_ARRAYS_WITH_DYNAMIC_MEMORY_AND_AS_SINGLE_DIMENSION)
 	printf(" DO_NOT_ALLOCATE_ARRAYS_WITH_DYNAMIC_MEMORY_AND_AS_SINGLE_DIMENSION mode on\n");
-#endif
+	#endif
 	int i, niter, step, n3;
 	double mflops, t, tmax, trecs[T_LAST + 1];
 	boolean verified;
@@ -387,7 +387,7 @@ void compute_rhs() {
 	 * and the speed of sound.
 	 * ---------------------------------------------------------------------
 	 */
-	// nowait caused race in 'S' size
+	 // nowait caused race in 'S' size
 	#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT) collapse(3) private(i, j, k)
 	for (k = 0; k <= grid_points[2] - 1; k++) {
 		for (j = 0; j <= grid_points[1] - 1; j++) {
@@ -1983,6 +1983,7 @@ void x_solve() {
 
 	if (timeron && thread_id == 0) { timer_start(T_XSOLVE); }
 	#pragma omp target update from(rhs[:KMAX][:JMAX+1][:IMAXP+1][:5]) from(us[:KMAX][:JMAX+1][:IMAXP+1])
+	#pragma omp parallel for
 	for (k = 1; k <= nz2; k++) {
 		double cv[PROBLEM_SIZE], rhon[PROBLEM_SIZE];
 		double lhs[IMAXP + 1][IMAXP + 1][5];
@@ -2273,6 +2274,7 @@ void y_solve() {
 
 	if (timeron && thread_id == 0) { timer_start(T_YSOLVE); }
 	#pragma omp target update from(rhs[:KMAX][:JMAX+1][:IMAXP+1][:5]) from(vs[:KMAX][:JMAX+1][:IMAXP+1])
+	#pragma omp parallel for
 	for (k = 1; k <= grid_points[2] - 2; k++) {
 		double cv[PROBLEM_SIZE], rhoq[PROBLEM_SIZE];
 		double lhs[IMAXP + 1][IMAXP + 1][5];
@@ -2557,6 +2559,7 @@ void z_solve() {
 	//todo: parallel it on gpu
 	//#pragma omp target teams distribute parallel for num_teams(TEAMS_AMOUNT)
 	#pragma omp target update from(rhs[:KMAX][:JMAX+1][:IMAXP+1][:5]) from(ws[:KMAX][:JMAX+1][:IMAXP+1])
+	#pragma omp parallel for
 	for (j = 1; j <= ny2; j++) {
 		double cv[PROBLEM_SIZE], rhos[PROBLEM_SIZE];
 		double lhs[IMAXP + 1][IMAXP + 1][5];
